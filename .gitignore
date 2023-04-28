@@ -4,6 +4,9 @@
 *.gz
 *.json
 
+# config etc
+!workflow/*.json
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

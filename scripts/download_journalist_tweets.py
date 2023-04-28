@@ -27,5 +27,5 @@ for focal_account in journalists["username"]:
 
 
     # write out each users tweets
-    with open(f"../data/immigration_tweets/journalists/{focal_account}.json", "w") as fout:
+    with open(f"data/immigration_tweets/journalists/{focal_account}.json", "w") as fout:
         json.dump(user_tweets, fout)
