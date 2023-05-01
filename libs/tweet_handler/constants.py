@@ -8,8 +8,8 @@ with open("workflow/config.json", "r") as cf:
 immigration_keywords = config["regex_query"]
 
 # these are the dates of the public tweets data
-start_date = datetime.strptime(config["dates"]["times"], "%m-%d-%Y %H:%M:%S")
-end_date = datetime.strptime(config["dates"]["times"], "%m-%d-%Y %H:%M:%S")
+start_date = datetime.strptime(config["dates"]["start"], "%m-%d-%Y %H:%M:%S")
+end_date = datetime.strptime(config["dates"]["end"], "%m-%d-%Y %H:%M:%S")
 
 # all fields we will ever need
 api_tweet_fields = ["id", "created_at", "text", "public_metrics", 

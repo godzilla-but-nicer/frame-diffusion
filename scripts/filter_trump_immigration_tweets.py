@@ -2,9 +2,12 @@ import json
 import tweet_handler as th
 from datetime import datetime
 
+with open("workflow/config.json", "r") as jf:
+    config = json.loads(jf.read())
+
 # we're going to stick with 2018 for now
-start_date = datetime.strptime("01-01-2018", "%m-%d-%Y")
-end_date = datetime.strptime("12-31-2018", "%m-%d-%Y")
+start_date = datetime.strptime(config["dates"]["start"], "%m-%d-%Y %H:%M:%S")
+end_date = datetime.strptime(config["dates"]["end"], "%m-%d-%Y %H:%M:%S")
 
 # same keywords as always
 query = "immigration|immigrants?|illegals|undocumented|illegal aliens?|migrants?|migration"

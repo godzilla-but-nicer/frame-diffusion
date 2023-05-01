@@ -120,6 +120,7 @@ def parse_tweet_json(tweet_json: dict, source: str="v2") -> dict:
 
     return new_row
 
+
 def parse_tweet_json_trump(tweet_json: dict) -> dict:
     new_row = {}
 
@@ -131,7 +132,7 @@ def parse_tweet_json_trump(tweet_json: dict) -> dict:
     new_row["time_stamp"] = dt
 
     new_row["screen_name"] = "realDonaldTrump"
-    new_row["text"] = tweet_json["text"]
+    new_row["text"] = tweet_json["text"].replace("\t", " ").replace("\n", " ")
 
     new_row["favorite_count"] = tweet_json["favorites"]
     new_row["retweet_count"] = tweet_json["retweets"]
@@ -185,11 +186,26 @@ def parse_tweet_json_congress(tweet_json: dict) -> dict:
     new_row = {}
     new_row["id_str"] = tweet_json["id"]
 
-    dt = datetime.fromisoformat(tweet_json["date"])
+    dt = datetime.fromisoformat(tweet_json["time"])
     new_row["year"] = dt.year
     new_row["time_stamp"] = dt
 
     new_row["screen_name"] = tweet_json["screen_name"]
-    new_row["text"] = tweet_json["text"]
+    new_row["text"] = tweet_json["text"].replace("\t", " ").replace("\n", " ")
 
     return new_row
+
+
+def filter_retweet(tweet_text: str) -> Optional[str]:
+
+    # skip straight retweets
+    if re.match(r'^\"*RT @', tweet_text):
+        return None
+    
+    # grab new text from quotes
+    elif re.search(r'QT @', tweet_text):
+        return re.findall(r"(.*)QT @", tweet_text)[0]
+    
+    # regular tweets just pass through
+    else:
+        return tweet_text
