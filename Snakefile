@@ -1,5 +1,7 @@
-import pandas as pd
+import gzip
 import json
+import numpy as np
+import pandas as pd
 import tweet_handler as th
 
 configfile: "workflow/config.json"
@@ -37,7 +39,33 @@ rule filter_trump_immigration:
         "scripts/filter_trump_immigration_tweets.py"
 
 
+
+rule get_us_tweet_ids:
+    input:
+        "data/immigration_tweets/US.gz"
+    output:
+        "data/us_public_ids.tsv"
+    run:
+        ids = []
+        with gzip.open(input[0], 'r') as f:
+            for i, line in enumerate(f):
+                ids.append(th.load_tweet_obj(line)["id_str"])
+        
+        df = pd.DataFrame({"id_str": ids})
+        df.to_csv(output[0], sep="\t", index=False)
+
+
 # 2. convert the json to tsv for each main category we're introducing
+rule build_public_sample_table:
+    input:
+        "data/immigration_tweets/US.gz",
+        "data/us_public_ids.tsv"
+    output:
+        "data/immigration_tweets/public_sample.tsv"
+    script:
+        "scripts/take_public_sample.py"
+
+
 rule build_congress_table:
     input:
         "data/immigration_tweets/congress.json"

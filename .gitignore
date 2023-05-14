@@ -6,6 +6,11 @@
 
 # config etc
 !workflow/*.json
+workflow/twitter_api_keys.json
+
+# directories with big files
+papers/
+plots/
 
 # snakemake
 .snakemake/

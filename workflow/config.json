@@ -37,6 +37,14 @@
         "narrative": [
             "Episodic",
             "Thematic"
+        ],
+        "low_f1": [
+            "Public Sentiment",
+            "Quality of Life",
+            "Hero: Cultural Diversity",
+            "Hero: Integration",
+            "Hero: Worker",
+            "Victim: War"
         ]
     },
     "model_names": {

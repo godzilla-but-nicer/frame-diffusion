@@ -19,6 +19,26 @@ def get_tweet_text(obj):
     return tweet_text.replace('\t', ' ').replace('\n', ' ')
 
 
+def load_tweets_from_gz(filename, keep_ids=None):
+    all_tweets = []
+    with gzip.open(filename, 'r') as f:
+        for i, line in enumerate(f):
+            tweet_obj = load_tweet_obj(line)
+            # for taking samples
+            if keep_ids:
+                if tweet_obj["id_str"] in keep_ids:
+                    all_tweets.append(tweet_obj)
+            else:
+                all_tweets.append(tweet_obj)
+
+    return all_tweets
+
+
+def load_tweet_obj(line):
+    return json.loads(line.decode('utf-8').strip())
+
+
+# these ones are new by me :)
 def filter_by_text(tweet_json: dict, query: str) -> Optional[dict]:
 
     # first ensure that the tweet has text, i guess some dont??
@@ -51,7 +71,7 @@ def download_immigration_tweets(screen_name: str,
                                 start_date: datetime,
                                 end_date: datetime,
                                 api_bearer_token: str) -> List[dict]:
-    
+
     # set up the client with the api keys
     client = tweepy.Client(api_bearer_token,
                            wait_on_rate_limit=True)
@@ -61,14 +81,14 @@ def download_immigration_tweets(screen_name: str,
     user_immigration_tweets = []
 
     for tweet in tweepy.Paginator(client.search_all_tweets,
-                                        query=api_query,
-                                        start_time=start_date,
-                                        end_time=end_date,
-                                        tweet_fields=api_tweet_fields,
-                                        user_fields=api_user_fields,
-                                        expansions=api_tweet_expansions,
-                                        limit=50).flatten():
-    
+                                  query=api_query,
+                                  start_time=start_date,
+                                  end_time=end_date,
+                                  tweet_fields=api_tweet_fields,
+                                  user_fields=api_user_fields,
+                                  expansions=api_tweet_expansions,
+                                  limit=50).flatten():
+
         tweet.data["screen_name"] = screen_name
         user_immigration_tweets.append(tweet.data)
         time.sleep(1)
@@ -101,19 +121,22 @@ def build_user_immigration_query(screen_name: str,
     return api_query
 
 
-def parse_tweet_json(tweet_json: dict, source: str="v2") -> dict:
+def parse_tweet_json(tweet_json: dict, source: str = "v2") -> dict:
     # this ugly ass function will take a fancy api dict and turn it
     # into a flat dict with appropriate column names. We need a bunch of
     # versions because not all tweets ceom from our api requests
-    
+
     if source == "trump":
         new_row = parse_tweet_json_trump(tweet_json)
 
     elif source == "v2":
         new_row = parse_tweet_json_v2(tweet_json)
-    
+
     elif source == "congress":
         new_row = parse_tweet_json_congress(tweet_json)
+    
+    elif source == "v1":
+        new_row = parse_tweet_json_v1(tweet_json)
 
     else:
         return ValueError(f"No source '{source}' implemented for parse_tweet_json")
@@ -140,7 +163,34 @@ def parse_tweet_json_trump(tweet_json: dict) -> dict:
     # not sure exactly how to handle this
     if tweet_json["isRetweet"] == "t":
         new_row["retweet_of_id"] = "unknown"
-    
+
+    return new_row
+
+def parse_tweet_json_v1(tweet_json: dict) -> dict:
+    # we must build up the rows by unpacking the json dict
+    new_row = {}
+
+    # main tweet features. every tweet should have these
+    new_row["id_str"] = tweet_json["id"]
+
+    time_stamp = datetime.strptime(
+        tweet_json["created_at"], "%a %b %d %H:%M:%S +0000 %Y")
+    new_row["year"] = time_stamp.year
+    new_row["time_stamp"] = time_stamp
+    new_row["screen_name"] = tweet_json["user"]["screen_name"]
+
+    new_row["text"] = get_tweet_text(tweet_json)
+
+    # metrics. every tweet should also have these
+    new_row["quote_count"] = tweet_json["quote_count"]
+    new_row["reply_count"] = tweet_json["reply_count"]
+    new_row["favorite_count"] = tweet_json["favorite_count"]
+    new_row["retweet_count"] = tweet_json["retweet_count"]
+
+    # interactions with other tweets, not all tweets will have this
+    if tweet_json["in_reply_to_status_id"] != "null":
+        new_row["reply_to_id"] = tweet_json["in_reply_to_status_id"]
+
     return new_row
 
 
@@ -150,8 +200,9 @@ def parse_tweet_json_v2(tweet_json: dict) -> dict:
 
     # main tweet features. every tweet should have these
     new_row["id_str"] = tweet_json["id"]
-    
-    time_stamp = datetime.strptime(tweet_json["created_at"], "%Y-%m-%dT%H:%M:%S.000Z")
+
+    time_stamp = datetime.strptime(
+        tweet_json["created_at"], "%Y-%m-%dT%H:%M:%S.000Z")
     new_row["year"] = time_stamp.year
     new_row["time_stamp"] = time_stamp
     new_row["screen_name"] = tweet_json["screen_name"]
@@ -175,10 +226,10 @@ def parse_tweet_json_v2(tweet_json: dict) -> dict:
 
             if ref_tw["type"] == "retweeted":
                 new_row["retweet_of_id"] = ref_tw["id"]
-        
+
             if ref_tw["type"] == "quoted":
                 new_row["quote_of_id"] = ref_tw["id"]
-    
+
     return new_row
 
 
@@ -201,11 +252,11 @@ def filter_retweet(tweet_text: str) -> Optional[str]:
     # skip straight retweets
     if re.match(r'^\"*RT @', tweet_text):
         return None
-    
+
     # grab new text from quotes
     elif re.search(r'QT @', tweet_text):
         return re.findall(r"(.*)QT @", tweet_text)[0]
-    
+
     # regular tweets just pass through
     else:
         return tweet_text

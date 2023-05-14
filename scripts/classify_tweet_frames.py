@@ -53,7 +53,7 @@ for _, tweet in tweets.iterrows():
             texts.append(pred_text)
 
 # finally we can do the classification, I'm going to pull the code from notebook
-labels = ["generic", "specific", "narrative"]
+labels = ["narrative"] # ["generic", "specific", "narrative"]
 for frame_type in labels:
 
     frame_labels = config["frames"][frame_type]
