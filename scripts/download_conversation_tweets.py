@@ -22,13 +22,15 @@ for year in years:
 
             if obj["in_reply_to_status_id"] != "null":
                 get_id = obj["in_reply_to_status_id"]
-                print(json.dumps(obj))
 
             if get_id and get_id not in checked:
-                conversation_tweets = th.download_conversation(get_id, keys["bearer_token"])
-                checked.add(get_id)
-                yearly_conversations.extend(conversation_tweets)
-                time.sleep(1)
+                try:
+                    conversation_tweets = th.download_conversation(get_id, keys["bearer_token"])
+                    checked.add(get_id)
+                    yearly_conversations.extend(conversation_tweets)
+                    time.sleep(1)
+                except:
+                    continue
 
     with gzip.open(f"data/immigration_tweets/US_conversations_{year}.gz", "w") as fout:
         fout.write(json.dumps(yearly_conversations).encode())
