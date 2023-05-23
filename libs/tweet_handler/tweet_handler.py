@@ -82,11 +82,11 @@ def download_immigration_tweets(screen_name: str,
 
     for tweet in tweepy.Paginator(client.search_all_tweets,
                                   query=api_query,
-                                  start_time=start_date,
+                                  start_time=start_date,  # from constants.py
                                   end_time=end_date,
                                   tweet_fields=api_tweet_fields,
                                   user_fields=api_user_fields,
-                                  expansions=api_tweet_expansions,
+                                  expansions=api_tweet_expansions,  # end from constants.py
                                   limit=50).flatten():
 
         tweet.data["screen_name"] = screen_name
@@ -94,6 +94,36 @@ def download_immigration_tweets(screen_name: str,
         time.sleep(1)
 
     return user_immigration_tweets
+
+def download_conversation(conversation_id: str,
+                          api_bearer_token: str,
+                          immigration_only: bool = True) -> List[dict]:
+    
+    # set up the client with the api keys
+    client = tweepy.Client(api_bearer_token,
+                           wait_on_rate_limit=True)
+    
+    if immigration_only:
+        api_query = build_conversation_immigration_query(conversation_id)
+    else:
+        api_query = f"conversation_id:{conversation_id} lang:en"
+
+    conversation_tweets = []
+
+    for tweet in tweepy.Paginator(client.search_all_tweets,
+                                  query=api_query,
+                                  start_time=start_date,  # from constants.py
+                                  end_time=end_date,
+                                  tweet_fields=api_tweet_fields,
+                                  user_fields=api_user_fields,
+                                  expansions=api_tweet_expansions,  # end from constants.py
+                                  limit=50).flatten():
+        
+        tweet.data["conversation"] = conversation_id
+        conversation_tweets.append(tweet.data)
+        time.sleep(1)
+
+    return conversation_tweets
 
 
 def build_user_immigration_query(screen_name: str,
@@ -120,6 +150,29 @@ def build_user_immigration_query(screen_name: str,
 
     return api_query
 
+def build_conversation_immigration_query(conversation_id: str,
+                                         regex_keywords: str = immigration_keywords):
+
+    # we need to reformat the keywords for the twitter api
+    api_keywords = []
+    words = immigration_keywords.split("|")
+
+    for word in words:
+        # i could have just done this by hand wow
+        # instead im tough and unpacked it in *code*
+        m = re.match(r"([a-z ]+)s\?", word)
+        if m:
+            singular = m.group(1)
+            api_keywords.append(singular)
+            api_keywords.append(singular + "s")
+        else:
+            api_keywords.append(word)
+
+    explicit_or_keywords = " OR ".join(api_keywords)
+
+    api_query = "(" + explicit_or_keywords + f") conversation_id:{conversation_id} lang:en"
+
+    return api_query
 
 def parse_tweet_json(tweet_json: dict, source: str = "v2") -> dict:
     # this ugly ass function will take a fancy api dict and turn it

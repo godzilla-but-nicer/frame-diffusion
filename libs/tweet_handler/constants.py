@@ -13,6 +13,6 @@ end_date = datetime.strptime(config["dates"]["end"], "%m-%d-%Y %H:%M:%S")
 
 # all fields we will ever need
 api_tweet_fields = ["id", "created_at", "text", "public_metrics", 
-                "in_reply_to_user_id", "entities", "referenced_tweets"]
+                    "in_reply_to_user_id", "entities", "referenced_tweets"]
 api_tweet_expansions = ["author_id", "referenced_tweets.id"]
 api_user_fields = ["id", "name", "username"]

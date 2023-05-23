@@ -77,23 +77,17 @@ frame_pair = ("Economic", "Capacity and Resources")
 sample_cooccurring_frames(df, frame_pair)
 # %% [markdown]
 #
-# To me, none of these tweets are about economics in the way i was thinking of
-# it as generally about people's ability to afford stuff with the exception of
-# the third in that it mentions jobs. Instead we see more of a concern about
-# how fenderal funds are spent and how that affects the capacity of the
-# government to do stuff and/or the financial resources with which it would.
-#  The third tweet appears to be about Capacity and Resources in that a house
-#  is a resource.
+# Mostly straightforward, we're talking about money and in most cases how the
+# money should be allocated to deal with problems. Not so sure about the third
+# tweet except I guess that a house is a resource.
 # %%
 frame_pair = ("External Regulation and Reputation", "Economic")
 sample_cooccurring_frames(df, frame_pair)
 # %% [markdown]
 # 
-# If we assume that diplomacy in general is External Reputation than I'm
-# definitely seeing it here. Economics tends to appear mostly in the form of
-# mentioning taxes. I think maybe the model is also picking up international
-# aid as belonging to both frames and thus giving them both as present. This
-# is, in my opinion, slightly different than cooccurance
+# External appears mostly as discussion of diplomacy. Economics tends to appear
+# mostly in the form of mentioning taxes. International aid is both in that aid
+# is diplomatic money and money is economic.
 # 
 # %%
 frame_pair = ("Political Factors and Implications",
@@ -101,6 +95,95 @@ frame_pair = ("Political Factors and Implications",
 sample_cooccurring_frames(df, frame_pair)
 # %% [markdown]
 #
-# The prescriptions here mostly seem implicit and I guess I don't feel equipped
-# to define what i think "political factors" ought to mean until ive read the
-# code book
+# Ok we have discussion of political parties and branches along with specific
+# mentions of policy. seems right.
+#
+# ### Congress - Specific frames
+#
+# Ok so we only have one pair here and Victim: War is the lowest performing
+# frame from the classifier. I don't expect much.
+
+# %%
+df = tweets["congress"]["specific"]
+
+frame_pair = ("Victim: War", "Victim: Global Economy")
+sample_cooccurring_frames(df, frame_pair)
+# %% [markdown] 
+# We've got conflict for sure but the codebook reserves this
+# frame specifically for named conflicts so i think these are false positives.
+# I'm actually not so sure about the Global Economy frame either here except i
+# guess implicit in the last tweet about underlying causes of instability.
+#
+# ## Journalist cooccurances
+#
+# we have many of the same correlated pairs here, i suspect its all similar to
+# congress.
+# 
+# ### Journalists - Generic
+#
+# %%
+df = tweets["journalists"]["generic"]
+
+frame_pair = ("Economic", "Capacity and Resources")
+sample_cooccurring_frames(df, frame_pair)
+# %% [markdown] 
+# Actually pretty different than what congress was saying! Much
+# less focus on specific policy and who is doing what. Not sure what tweet two
+# has to do with capacity and resources.
+
+# %%
+frame_pair = ("Health and Safety", "Crime and Punishment")
+sample_cooccurring_frames(df, frame_pair)
+# %% [markdown]
+#
+# Variety of things here covering both specific crimes and how their victims
+# were affected, criminal groups, detention centers. These are all slam dunk
+# crime tweets often with just a word or two of healkth and safety in
+# mentioning the victims. in the last case its just crime?
+#
+
+# %%
+frame_pair = ("Fairness and Equality", "Cultural Identity")
+sample_cooccurring_frames(df, frame_pair)
+
+# %% [markdown]
+#
+# Overall pretty spot on, the first one addresses culture and fairness
+# directly, the others compare how cultural and/or racial groups are treated.
+# the last one is wild.
+#
+
+# %%
+frame_pair = ("External Regulation and Reputation", "Economic")
+sample_cooccurring_frames(df, frame_pair)
+# %% [markdown]
+# 
+# more straightforwardly cuing both frames than among the congress people.
+# In most cases I think cuing them seperately. The second tweet is probably the
+# minimal example of this combination
+#
+# %%
+frame_pair = ("Political Factors and Implications",
+              "Policy Prescription and Evaluation")
+sample_cooccurring_frames(df, frame_pair)
+
+# %% [markdown]
+#
+# This is similar to how congress people tralked about these. Mentions of
+# specific policy prescriptions and by whom.
+#
+# %%
+df = tweets["journalists"]["specific"]
+
+frame_pair = ("Victim: War", "Victim: Global Economy")
+sample_cooccurring_frames(df, frame_pair)
+# %%
+#
+# Again similar to the congress people but I blame it on the classifier. some
+# of these are about the "global economy" in that they mention other countries
+# economies, not really named conflicts in here.
+#
+# ## Trump cooccurances
+#
+# These are the fun ones!
+# %%

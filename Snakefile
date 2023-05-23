@@ -6,7 +6,7 @@ import tweet_handler as th
 
 configfile: "workflow/config.json"
 
-journalists = pd.read_csv("data/users_of_interest/top_536_journos.tsv", sep="\t")["username"]
+journalists = pd.read_csv("data/user_info/top_536_journos.tsv", sep="\t")["username"]
 
 # 1. Download/extract the immigration tweet json data
 # no api request
@@ -22,11 +22,20 @@ rule download_congress_tweets:
 # takes multiple days, thousands of api requests
 rule download_journalist_tweets:
     input:
-        "top_536_journos.tsv"
+        "data/user_info/top_536_journos.tsv"
     output:
         expand("data/immigration_tweets/journalists/{journalist}.json", journalist=journalists)
     script:
         "scripts/download_journalist_tweets.py"
+
+# another long one, gets the tweets one retweet, quote, or reply away
+rule download_adjacent_tweets:
+    input:
+        "data/immigration_tweets/US.gz"
+    output:
+        "data/immigration_tweets/US_one_step.gz"
+    script:
+        "scripts/download_adjacent_tweets.py"
 
 
 # pulling out the immigration subset from trump twitter archive
@@ -40,18 +49,23 @@ rule filter_trump_immigration:
 
 
 
-rule get_us_tweet_ids:
+rule get_us_tweet_ids_times:
     input:
-        "data/immigration_tweets/US.gz"
+        "data/immigration_tweets/US_2018.gz",
+        "data/immigration_tweets/US_2019.gz"
     output:
         "data/us_public_ids.tsv"
     run:
         ids = []
-        with gzip.open(input[0], 'r') as f:
-            for i, line in enumerate(f):
-                ids.append(th.load_tweet_obj(line)["id_str"])
+        time_stamps = []
+        for i in range(2):
+            with gzip.open(input[i], 'r') as f:
+                for i, line in enumerate(f):
+                    tweet = th.load_tweet_obj(line)
+                    ids.append(tweet["id_str"])
+                    time_stamps.append(tweet["created_at"])
         
-        df = pd.DataFrame({"id_str": ids})
+        df = pd.DataFrame({"id_str": ids, "time_stamp": time_stamps})
         df.to_csv(output[0], sep="\t", index=False)
 
 
