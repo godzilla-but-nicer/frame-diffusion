@@ -3,7 +3,6 @@ import json
 import time
 import tweet_handler as th
 
-from tqdm import tqdm
 
 # get api keys
 with open("workflow/twitter_api_keys.json", "r") as fin:
