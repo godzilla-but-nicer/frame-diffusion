@@ -27,9 +27,10 @@ for year in years:
                     conversation_tweets = th.download_conversation(get_id, keys["bearer_token"])
                     checked.add(get_id)
                     yearly_conversations.extend(conversation_tweets)
-                    time.sleep(1)
+
+                    with gzip.open(f"data/immigration_tweets/conversations/{get_id}.gz", "w") as fout:
+                        fout.write(json.dumps(yearly_conversations).encode())
+
                 except:
                     continue
 
-    with gzip.open(f"data/immigration_tweets/US_conversations_{year}.gz", "w") as fout:
-        fout.write(json.dumps(yearly_conversations).encode())
