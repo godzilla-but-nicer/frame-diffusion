@@ -15,7 +15,7 @@ checked = set({})
 for year in years:
     yearly_conversations = []
     with gzip.open(f"data/immigration_tweets/US_{year}.gz", "r") as fgz:
-        for i, line in tqdm(enumerate(fgz)):
+        for i, line in enumerate(fgz):
 
             get_id = False
             obj = json.loads(line.decode('utf-8').strip())
