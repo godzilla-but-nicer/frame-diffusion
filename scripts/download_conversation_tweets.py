@@ -2,6 +2,7 @@ import gzip
 import json
 import time
 import tweet_handler as th
+import glob
 
 
 # get api keys
@@ -9,7 +10,11 @@ with open("workflow/twitter_api_keys.json", "r") as fin:
     keys = json.loads(fin.read())
 
 years = ["2018", "2019"]
-checked = set({})
+
+# figure out what we have already
+parse_id = lambda x: x.split("/")[-1].split(".")[0]
+downloaded_convs = [parse_id(file) for file in  glob.glob("data/immigration_tweets/conversations/*")]
+checked = set(downloaded_convs)
 
 for year in years:
     yearly_conversations = []
