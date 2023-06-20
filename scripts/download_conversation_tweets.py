@@ -33,7 +33,7 @@ for year in years:
 
                     with gzip.open(f"data/immigration_tweets/conversations/{get_id}.gz", "w") as fout:
                         fout.write(json.dumps(conversation_tweets).encode())
-
+                        fout.flush()
                 except:
                     continue
 
