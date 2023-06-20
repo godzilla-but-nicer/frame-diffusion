@@ -28,7 +28,7 @@ for year in years:
 
             if get_id and get_id not in checked:
                 try:
-                    conversation_tweets = th.download_conversation(get_id, keys["bearer_token"])
+                    conversation_tweets = th.download_conversation(get_id, keys["bearer_token"], immigration_only=False)
                     checked.add(get_id)
 
                     with gzip.open(f"data/immigration_tweets/conversations/{get_id}.gz", "w") as fout:
