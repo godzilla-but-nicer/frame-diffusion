@@ -17,7 +17,6 @@ downloaded_convs = [parse_id(file) for file in  glob.glob("data/immigration_twee
 checked = set(downloaded_convs)
 
 for year in years:
-    yearly_conversations = []
     with gzip.open(f"data/immigration_tweets/US_{year}.gz", "r") as fgz:
         for i, line in enumerate(fgz):
 
@@ -31,10 +30,9 @@ for year in years:
                 try:
                     conversation_tweets = th.download_conversation(get_id, keys["bearer_token"])
                     checked.add(get_id)
-                    yearly_conversations.extend(conversation_tweets)
 
                     with gzip.open(f"data/immigration_tweets/conversations/{get_id}.gz", "w") as fout:
-                        fout.write(json.dumps(yearly_conversations).encode())
+                        fout.write(json.dumps(conversation_tweets).encode())
 
                 except:
                     continue
