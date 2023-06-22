@@ -5,7 +5,7 @@ import tweepy
 import time
 from constants import *
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 # modified from https://github.com/juliamendelsohn/framing/blob/master/code/parse_tweets.py
@@ -124,6 +124,53 @@ def download_conversation(conversation_id: str,
         time.sleep(1)
 
     return conversation_tweets
+
+
+def download_quote_tweets(tweet_id: str,
+                          api_bearer_token: str) -> List[Dict]:
+    
+    # set up the client with the api keys
+    client = tweepy.Client(api_bearer_token,
+                           wait_on_rate_limit=True)
+
+    quote_tweets = []
+    
+    for tweet in tweepy.Paginator(client.get_quote_tweets,
+                                  id=tweet_id,
+                                  tweet_fields=api_tweet_fields,
+                                  user_fields=api_user_fields,
+                                  expansions=api_tweet_expansions,  # end from constants.py
+                                  limit=50).flatten():
+    
+        quote_tweets.append(tweet.data)
+        time.sleep(1)
+    
+    return quote_tweets
+
+    
+def download_replies(tweet_id: str,
+                     api_bearer_token: str) -> List[Dict]:
+    
+    # set up the client with the api keys
+    client = tweepy.Client(api_bearer_token,
+                           wait_on_rate_limit=True)
+
+    quote_tweets = []
+    query = f"conversation_id:{tweet_id} is:reply"
+    
+    for tweet in tweepy.Paginator(client.search_all_tweets,
+                                  query=tweet_id,
+                                  start_time=start_date,  # from constants.py
+                                  end_time=end_date,
+                                  tweet_fields=api_tweet_fields,
+                                  user_fields=api_user_fields,
+                                  expansions=api_tweet_expansions,  # end from constants.py
+                                  limit=50).flatten():
+    
+        quote_tweets.append(tweet.data)
+        time.sleep(1)
+    
+    return quote_tweets
 
 
 def build_user_immigration_query(screen_name: str,
