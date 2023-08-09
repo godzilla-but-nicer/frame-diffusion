@@ -16,12 +16,23 @@ from itertools import permutations
 with open("../workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
+# normalize the windowed sums by the total number of frames for the group in
+# the given time window. each window within a group will then represent a
+# probability distribution of frames for the group
+normalize = True
+
 # %%
 # load data
 groups = ["congress", "journalists", "trump", "public"]
-# narrative should be in here too
-frame_types = ["generic", "specific", "narrative"]
+# basically every tweet has one or both of narrative/episodic so it will mess
+# with normalization when narrative frames arent terriblytt interesting for
+# granger causality analysis
+if normalize:
+    frame_types = ["generic", "specific"]  # could do narrative but thats not super interesting for granger causality
+else:
+    frame_types = ["generic", "specific", "narrative"]
 
+# %%|
 frames = {k: {} for k in groups}
 for group in groups:
     for frame_type in frame_types:
@@ -55,8 +66,7 @@ for group in groups:
             # tweet_info["time_stamp"] = datetime.strptime(tweet_info["time_stamp"],
             #                                              "%a %b %d %H:%M:%S +0000 %Y")
             
-            frames["public"][frame_type] = pd.merge(
-                tweet_info, predictions, on="id_str")
+            frames["public"] = pd.merge(tweet_info, predictions, on="id_str")
 
 
 # %% [markdown]
@@ -76,32 +86,63 @@ for group in groups:
 #
 
 # %%
+from functools import reduce
+
 # eight-hour windows
 measure_frequency = "8H"
 
-
 # will hold keys for groups
-period_sums = {k: {} for k in groups}
+period_sums = {}
 
 for group in groups:
-    for frame_type in frame_types:
-        type_rows = []
-        df = frames[group][frame_type]
-        df["time_stamp"] = pd.to_datetime(df["time_stamp"], utc=True)
+    if group == "public":
 
-        period_sums[group][frame_type] = (df.groupby(pd.Grouper(key="time_stamp",
-                                                                freq=measure_frequency))
-                                            .sum()
-                                            .reset_index())
+        all_frames = frames[group].drop(["id_str", "Unnamed: 0"], axis="columns")
+        
+    else:
+        # let's get all of our frames in one place
+        frame_type_dfs = []
+        for frame_type in frame_types:
+            df = frames[group][frame_type]
+            df["time_stamp"] = pd.to_datetime(df["time_stamp"], utc=True)
+            frame_type_dfs.append(df)
+        
+        # fancy triple merge "one-liner"
+        all_frames = (reduce(lambda l, r: pd.merge(l, r, on="time_stamp"),
+                             frame_type_dfs).fillna(0))
+        
+    # get the frame sums in each time window
+    period_sums[group] = (all_frames.groupby(pd.Grouper(key="time_stamp",
+                                                        freq=measure_frequency))
+                                    .sum()
+                                    .reset_index())
+
+
+    if normalize:
+        # pull out time labels
+        time_stamps = period_sums[group]["time_stamp"]
+
+        # normalize rows
+        frames_only = period_sums[group].drop("time_stamp", axis="columns")
+        
+        # avoid divide by zero
+        row_sums = frames_only.sum(axis="columns")
+        row_sums[row_sums == 0] = 1
+
+        # normalize
+        normed_frames = frames_only.div(row_sums, axis="rows")
+
+        # glue back together
+        period_sums[group] = pd.concat((time_stamps, normed_frames),
+                                        axis="columns")
 
 # %%
 # We're going to drop all of the frames with poor classifier performance
 # this is an easy to think about way to do it.
 for g in groups:
-    for ft in frame_types:
         for frame in config["frames"]["low_f1"]:
-            if frame in period_sums[g][ft].columns:
-                period_sums[g][ft] = period_sums[g][ft].drop(
+            if frame in period_sums[g].columns:
+                period_sums[g] = period_sums[g].drop(
                     frame, axis="columns")
 
 # %% [markdown]
@@ -110,9 +151,8 @@ for g in groups:
 # %%
 
 group = "public"
-frame_type = "generic"
-frame = "Security and Defense"
-plot_df = period_sums[group][frame_type]
+frame = "Policy Prescription and Evaluation"
+plot_df = period_sums[group]
 
 # We're going to put the time series and
 fig, ax = plt.subplot_mosaic([["A", "A"],
@@ -126,53 +166,38 @@ ax["A"].set_ylabel("Number of Tweets")
 ax["A"].set_title(f"{group} - {frame}")
 
 # Discrete distribution so we can get unbinned frequencies
-value, count = np.unique(plot_df[frame], return_counts=True)
-
-# let's also fit a couple of distributions
-lnshape, lnloc, lnscale = lognorm.fit(plot_df[frame])
-eloc, escale = expon.fit(plot_df[frame])
-
-ax["B"].bar(value, count / np.sum(count),
-            linewidth=0,
-            width=1,
-            align="center",
-            label="Data")
-ax["B"].plot(value[1:], lognorm.pdf(value[1:], lnshape, lnloc, lnscale),
-             c="C1",
-             ls="--",
-             label="Lognormal fit")
-ax["B"].plot(value, poisson.pmf(value, np.mean(plot_df[frame])),
-             c="C2",
-             ls="--",
-             label="Poisson fit")
-ax["B"].plot(value, expon.pdf(value, eloc, escale),
-             c="C3",
-             ls="--",
-             label="Exponential fit")
-
-
-ax["B"].legend()
-ax["B"].set_xlabel("Number of Tweets")
-ax["B"].set_ylabel("Frequency")
-ax["B"].set_xlim(-0.5, 53)
+if normalize:
+    ax["B"].hist(plot_df[frame], bins=50)
+    ax["B"].set_xlabel("Fraction Cueing Frame in period")
+else:
+    values, counts = np.unique(plot_df[frame], return_counts=True)
+    ax["B"].bar(values, counts, width=1, linewidth=0)
+    ax["B"].set_xlabel("Tweets Cueing Frame in period")
+ax["B"].set_ylabel("Count")
 
 # autocorrelation and partial autocorrelation
 frame_acf = stattools.acf(plot_df[frame])
 frame_pacf = stattools.pacf(plot_df[frame])
 
+if normalize:
+    viz_lags = 30
+else:
+    viz_lags = 50
+
 ax["C"].axhline(0, c="grey")
-plot_acf(plot_df[frame], ax["C"], lags=50, title="")
+plot_acf(plot_df[frame], ax["C"], lags=viz_lags, title="")
 ax["C"].set_xlabel("Lag")
 ax["C"].set_ylabel("Autocorrelation")
 ax["C"].set_ylim((-0.5, 1.1))
 
 ax["D"].axhline(0, c="grey")
-plot_pacf(plot_df[frame], ax["D"], lags=50, title="")
+plot_pacf(plot_df[frame], ax["D"], lags=viz_lags, title="")
 ax["D"].set_ylim((-0.5, 1.1))
 ax["D"].set_xlabel("Lag")
 ax["D"].set_ylabel("Partial Autocorrelation")
 
 plt.tight_layout()
+plt.savefig("../plots/time_series_analysis/time_series_diagnostic.png")
 plt.show()
 # %% [markdown]
 #
@@ -193,14 +218,24 @@ plt.show()
 # periodicity but I guess we'll find out.
 #
 # %%
-
-res = ar_model.AutoReg(plot_df[frame], lags=4).fit()
+if normalize:
+    seasonal = False
+    lags = 6
+    period = 0
+else:
+    seasonal = True
+    lags = 4
+    period = 3 
+res = ar_model.AutoReg(plot_df[frame], lags=lags).fit()
 print(f"AR, No seasonality. AIC: {res.aic}, BIC: {res.bic}")
-res2 = ar_model.AutoReg(plot_df[frame], lags=4, seasonal=True, period=3).fit()
+res2 = ar_model.AutoReg(plot_df[frame], lags=lags, seasonal=seasonal, period=period).fit()
 print(f"AR Seasonality. AIC: {res2.aic}, BIC: {res2.bic}")
-res_arima = ARIMA(plot_df[frame], order=(4, 0, 0),
-                  seasonal_order=(0, 0, 0, 3)).fit()
-print(f"SARIMA. AIC: {res_arima.aic}, BIC: {res_arima.bic}")
+res_arima = ARIMA(plot_df[frame], order=(lags, 0, 1),
+                  seasonal_order=(0, 0, 0, period)).fit()
+print(f"SARIMA I(1). AIC: {res_arima.aic}, BIC: {res_arima.bic}")
+res_arima = ARIMA(plot_df[frame], order=(lags, 0, 2),
+                  seasonal_order=(0, 0, 0, period)).fit()
+print(f"SARIMA I(2). AIC: {res_arima.aic}, BIC: {res_arima.bic}")
 
 # %% [markdown]
 #
@@ -214,27 +249,38 @@ order = ar_model.ar_select_order(
     plot_df[frame], maxlag=21, seasonal=True, period=3)
 print(order.ar_lags)
 res = ar_model.AutoReg(
-    plot_df[frame], lags=order.ar_lags, seasonal=True, period=3).fit()
-print(f"AIC: {res.aic}, BIC: {res.bic}")
+    plot_df[frame], lags=order.ar_lags, seasonal=seasonal, period=period).fit()
+print(f"AR(6) AIC: {res.aic}, BIC: {res.bic}")
+
+res_ari = ARIMA(plot_df[frame], order=(6, 0, 1)).fit()
+print(f"ARI(6, 1) AIC: {res_ari.aic}, BIC: {res_ari.bic}")
 
 # %%
-fig, ax = plt.subplots(nrows=2, figsize=(6, 4))
+fig, ax = plt.subplots(nrows=3, figsize=(6, 5))
 
 # in sample prediction plot
 n_steps = 100
-preds = res.predict(0, len(plot_df[frame][:n_steps]))
+ar_preds = res.predict(0, len(plot_df[frame][:n_steps]))
+ari_preds = res_ari.predict(0, len(plot_df[frame][:n_steps]))
 ax[0].plot(plot_df[frame][:n_steps], label="data")
-ax[0].plot(preds, label="AR Model")
+ax[0].plot(ar_preds, ls="--", label="AR(6) Model")
+ax[0].plot(ari_preds, ls=":", label="ARI(6, 1) Model")
 
 ax[0].legend()
 ax[0].set_xlabel("Time")
 ax[0].set_ylabel("Number of Tweets")
 
 ax[1].hist(res.resid, bins=100)
-
-ax[1].set_xlabel("Residual")
+ax[1].set_xlabel("AR(6) Residual")
 ax[1].set_ylabel("Count")
+
+ax[2].hist(res_ari.resid, bins=100)
+ax[2].set_xlabel("ARI(6, 1) Residual")
+ax[2].set_ylabel("Count")
+
 plt.tight_layout()
+plt.savefig(f"../plots/time_series_analysis/model_fit_{group}_{frame}.png")
+plt.savefig(f"../plots/time_series_analysis/model_fit_{group}_{frame}.pdf")
 plt.show()
 
 # %% [markdown]
@@ -249,7 +295,7 @@ plt.show()
 
 # %%
 residuals = {k: {} for k in groups}
-all_periods = pd.DataFrame(period_sums["congress"]["specific"]["time_stamp"])
+all_periods = pd.DataFrame(period_sums["congress"]["time_stamp"])
 
 for group in groups:
     for frame_type in frame_types:
@@ -258,7 +304,7 @@ for group in groups:
             if frame in config["frames"]["low_f1"]:
                 continue
 
-            time_series=period_sums[group][frame_type][["time_stamp", frame]]
+            time_series=period_sums[group][["time_stamp", frame]]
 
             # we want to make sure that all of the times are actually aligned
             time_series_fixed=pd.merge(all_periods, time_series,
@@ -301,18 +347,13 @@ def run_granger_causality(pair: Tuple[str, str],
 
     gc_res = grangercausalitytests(gcdf, maxlag=1)
 
-    max_pvalue = 0
-    test_statistic = 0
-    test_name = ""
-    for test in gc_res[1][0].keys():
-        if gc_res[1][0][test][1] > max_pvalue:
-            max_pvalue = gc_res[1][0][test][1]
-            test_statistic = gc_res[1][0][test][0]
-            test_name = test
+    test_name = "liklihood-ratio"
+    p_value = gc_res[1][0]["lrtest"][1]
+    test_statistic = gc_res[1][0]["lrtest"][0]
     
 
     result["test_name"] = test_name
-    result["p_value"] = max_pvalue
+    result["p_value"] = p_value
     result["test_statistic"] = test_statistic
 
     return result
@@ -332,7 +373,12 @@ for pair in group_pairs:
                                                      frame))
         
 gcdf = pd.DataFrame(df_rows).dropna()
-gcdf.to_csv("../data/time_series_output/sample_granger_causality.tsv",
+if normalize:
+    norm_label = "_normalized"
+else:
+    norm_label = ""
+
+gcdf.to_csv(f"../data/time_series_output/sample_granger_causality{norm_label}.tsv",
             sep="\t",
             index=False)
 print(gcdf)
@@ -359,5 +405,118 @@ def bonferroni_holm(data, alpha):
 
 gcdf_corrected = bonferroni_holm(gcdf, 0.05)
 signif = gcdf_corrected[gcdf_corrected["null_rejected"] == True]
-signif.to_csv("../data/time_series_output/significant_complete_granger.tsv", sep="\t")
+signif.to_csv(f"../data/time_series_output/significant_complete_granger{norm_label}.tsv", sep="\t")
+# %% [markdown]
+# ## What if we dont use the same model across time series
+#
+# Based on a comment from ceren I want to see how many lags we should consider
+# in our AR models for the univariate time series. I will first plot a
+# distribution of optimal lags for each of the frame use time series than i
+# will rerun the granger causality analysis using each optimal model if we see
+# a broad distribution
+
+# %%
+optimal_orders = []
+best_bics = []
+for group in groups:
+    for frame_type in frame_types:
+        for frame in config["frames"][frame_type]:
+
+            if frame in config["frames"]["low_f1"]:
+                continue
+    
+            
+            time_series = period_sums[group][["time_stamp", frame]]
+            if np.sum(time_series[frame]) > 0:
+                order = ar_model.ar_select_order(
+                    time_series[frame], maxlag=21, seasonal=True, period=3)
+                
+                best_bic = 0
+                for lags in order.bic.keys():
+                    if order.bic[lags] < best_bic:
+                        best_bic = order.bic[lags]
+
+                best_bics.append(best_bic)
+
+                if order.ar_lags:
+                    optimal_orders.append(len(order.ar_lags))
+                else:
+                    optimal_orders.append(0)
+                
+
+value, count = np.unique(optimal_orders, return_counts=True)
+
+fig, ax = plt.subplots()
+ax.bar(value, count)
+ax.set_xlabel("Optimal AR Lags")
+ax.set_ylabel("# of single frame time series")
+
+plt.savefig("../plots/time_series_analysis/optimal_ar_lags.png")
+plt.savefig("../plots/time_series_analysis/optimal_ar_lags.pdf")
+plt.show()
+# %%
+residuals = {k: {} for k in groups}
+all_periods = pd.DataFrame(period_sums["congress"]["time_stamp"])
+
+for group in groups:
+    for frame_type in frame_types:
+        for frame in config["frames"][frame_type]:
+
+            if frame in config["frames"]["low_f1"]:
+                continue
+
+            time_series=period_sums[group][["time_stamp", frame]]
+
+            # we want to make sure that all of the times are actually aligned
+            time_series_fixed=pd.merge(all_periods, time_series,
+                                       on = "time_stamp",
+                                       how = "left").fillna(0)
+            
+            order = ar_model.ar_select_order(time_series[frame],
+                                             maxlag=21,
+                                             seasonal=True,
+                                             period=3)
+
+            if order.ar_lags:
+
+                selected_lags = order.ar_lags
+
+                ar_fit=ar_model.AutoReg(time_series[frame],
+                                        lags=selected_lags,
+                                        seasonal=True,
+                                        period=3).fit()
+
+                residuals[group][frame] = ar_fit.resid
+            
+            else:
+
+                residuals[group][frame] = time_series[frame]
+
+# %%
+group_pairs = permutations(groups, 2)
+df_rows = []
+
+for pair in group_pairs:
+    for frame_type in frame_types:
+        for frame in config["frames"][frame_type]:
+            if frame in config["frames"]["low_f1"]:
+                continue
+            else:
+                df_rows.append(run_granger_causality(pair, 
+                                                     residuals, 
+                                                     frame))
+        
+gcdf = pd.DataFrame(df_rows).dropna()
+if normalize:
+    norm_label = "_normalized"
+else:
+    norm_label = ""
+
+gcdf.to_csv(f"../data/time_series_output/optimal_granger_causality{norm_label}.tsv",
+            sep="\t",
+            index=False)
+
+gcdf_corrected = bonferroni_holm(gcdf, 0.05)
+signif = gcdf_corrected[gcdf_corrected["null_rejected"] == True]
+signif.to_csv(f"../data/time_series_output/significant_complete_granger{norm_label}_optimal_ar.tsv", sep="\t")
 # %%

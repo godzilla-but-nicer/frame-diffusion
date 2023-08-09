@@ -53,17 +53,23 @@ def filter_by_text(tweet_json: dict, query: str) -> Optional[dict]:
         return None
 
 
-def filter_tweet_list(tweet_list: List[dict], text_query: str) -> List[dict]:
+def filter_tweet_list(tweet_list: List[dict], text_query: str, return_rejects=False) -> List[dict]:
 
     # just applying our the filter by text function to a bunch of tweets
     keep_tweets = []
+    rejected_tweets = []
 
     for tweet in tweet_list:
         filtered_tweet = filter_by_text(tweet, text_query)
 
         if filtered_tweet is not None:
             keep_tweets.append(filtered_tweet)
+        elif return_rejects:
+            rejected_tweets.append(tweet)
 
+    if return_rejects:
+        return keep_tweets, rejected_tweets
+    
     return keep_tweets
 
 

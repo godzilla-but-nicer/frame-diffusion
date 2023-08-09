@@ -31,7 +31,8 @@ for journalist in journos["screen_name"].unique():
 
         except:
             continue
-        
+
+        print(conv)
 
         try:
             quotes = th.download_replies(row["id_str"], keys["bearer_token"])

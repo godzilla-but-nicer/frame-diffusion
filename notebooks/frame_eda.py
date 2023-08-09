@@ -4,129 +4,202 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import json as json
+from functools import reduce
 from scipy.stats import entropy
+from frame_stats import bootstrap_ci, bootstrap_ci_multivariate, draw_frame_frequencies
+from itertools import product
 
 with open("../workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
-
 # load data
 groups = ["congress", "journalists", "trump", "public"]
 frame_types = ["generic", "specific", "narrative"]
+all_frames = config["frames"]["specific"].copy()
+all_frames.extend(config["frames"]["generic"].copy())
+all_frames.extend(config["frames"]["narrative"].copy())
 
-frame_sums = {k: {} for k in groups} # will hold a bunch of vectors of frame sums by group
+# %%
+rerun_bootstrap = False
 
-for group in groups:
-    for frame_type in frame_types:
+if rerun_bootstrap:
+    frame_probs = {k: {} for k in groups} # will hold a bunch of vectors of frame sums by group
+
+    for group in groups:
 
         if group != "public":
+            group_dfs = []
+            for frame_type in frame_types:
+                predictions = pd.read_csv(f"../data/binary_frames/{group}/{group}_{frame_type}.tsv",
+                                          sep="\t")
+                group_dfs.append(predictions.drop("text", axis="columns")) 
+            predictions = (reduce(lambda l, r: pd.merge(l, r, on="id_str"),
+                              group_dfs).fillna(0))
+        else:
+            # list of data frames for the group to combine into one
+                predictions = pd.read_csv(f"../data/binary_frames/predicted_frames.tsv",
+                                          sep="\t")
+                us_public_ids = pd.read_csv(f"../data/us_public_ids.tsv", sep="\t")
+                predictions = pd.merge(us_public_ids, predictions,
+                                       on="id_str", how="left")
+                group_dfs.append(predictions)
+
+
+        group_frames = {}
+        for i, frame in enumerate(all_frames):
+
+            group_frames[frame] = bootstrap_ci(predictions[frame].values,
+                                               lambda x: x.sum() / x.shape[0],
+                                               10000,
+                                               0.05,
+                                               seed=123)
+
+        frame_probs[group] = group_frames
+
+
+        long_ids = product(groups, all_frames)
+        long_probs = pd.DataFrame(long_ids, columns=["Group", "Frame"])
+        lowers = []
+        estimates = []
+        uppers = []
+
+        for i, row in long_probs.iterrows():
+            lowers.append(frame_probs[row["Group"]][row["Frame"]]["lower"])
+            estimates.append(frame_probs[row["Group"]][row["Frame"]]["estimate"])
+            uppers.append(frame_probs[row["Group"]][row["Frame"]]["upper"])
+
+        long_probs["lower"] = lowers
+        long_probs["Frequency"] = estimates
+        long_probs["upper"] = uppers
+
+        generic_long = long_probs[long_probs["Frame"].isin(config["frames"]["generic"])]
+        specific_long = long_probs[long_probs["Frame"].isin(config["frames"]["specific"])]
+        narrative_long = long_probs[long_probs["Frame"].isin(config["frames"]["narrative"])]
+
+else:
+
+    long_probs = pd.read_csv("../data/eda_bootstrap/coarse_frequency_boot.tsv", sep="\t")
+
+generic_long = long_probs[long_probs["Frame"].isin(config["frames"]["generic"])]
+specific_long = long_probs[long_probs["Frame"].isin(config["frames"]["specific"])]
+narrative_long = long_probs[long_probs["Frame"].isin(config["frames"]["narrative"])]
+# %%
+figg, axg = plt.subplots()
+
+draw_frame_frequencies(long_probs, config["frames"]["generic"], axg)
+
+figg.tight_layout()
+figg.savefig(f"../plots/frame_eda/generic_frequency_by_group.png")
+figg.savefig(f"../plots/frame_eda/generic_frequency_by_group.pdf")
+
+# %%
+figs, axs = plt.subplots()
+
+draw_frame_frequencies(long_probs, config["frames"]["specific"], axs)
+
+figs.tight_layout()
+figs.savefig(f"../plots/frame_eda/specific_frequency_by_group.png")
+figs.savefig(f"../plots/frame_eda/specific_frequency_by_group.pdf")
+
+# %%
+fign, axn = plt.subplots()
+
+draw_frame_frequencies(long_probs, config["frames"]["narrative"], axn, 
+                       legend_loc="upper left")
+
+fign.tight_layout()
+fign.savefig(f"../plots/frame_eda/narrative_frequency_by_group.png")
+fign.savefig(f"../plots/frame_eda/narrative_frequency_by_group.pdf")
+
+# %%
+frames = {}
+for group in groups:
+
+    if group != "public":
+        group_dfs = []
+        for frame_type in frame_types:
             predictions = pd.read_csv(f"../data/binary_frames/{group}/{group}_{frame_type}.tsv",
                                       sep="\t")
-        else:
+            group_dfs.append(predictions.drop("text", axis="columns"))
+
+        predictions = (reduce(lambda l, r: pd.merge(l, r, on="id_str"),
+                          group_dfs).fillna(0))
+    else:
+        # list of data frames for the group to combine into one
             predictions = pd.read_csv(f"../data/binary_frames/predicted_frames.tsv",
                                       sep="\t")
             us_public_ids = pd.read_csv(f"../data/us_public_ids.tsv", sep="\t")
             predictions = pd.merge(us_public_ids, predictions,
                                    on="id_str", how="left")
-        
-        frame_vec = np.zeros(len(config["frames"][frame_type]))
-        for i, frame in enumerate(config["frames"][frame_type]):
-
-            frame_vec[i] = predictions[frame].sum()
-
-        frame_sums[group][frame_type] = frame_vec
-
-# %%
-distributions = {}
-for frame_type in frame_types:
-    type_rows = []
-    for group in groups:
-
-        # we just need normalized vectors and group labels for seaborn
-        normed_sums = frame_sums[group][frame_type] / np.sum(frame_sums[group][frame_type])
-        row_dict = {f: normed_sums[i] for i, f in enumerate(config["frames"][frame_type])}
-        row_dict["group"] = group
-
-        type_rows.append(row_dict)
+            group_dfs.append(predictions)
     
-    # convert to long for seaborn
-    df_wide = pd.DataFrame(type_rows)
-    df_long = pd.melt(df_wide, id_vars="group")
-
-    # stick it in the dict for easy access
-    distributions[frame_type] = df_long
-
-print(distributions["generic"])
+    frames[group] = predictions[all_frames]
 
 # %%
-fig, ax = plt.subplots(ncols=2, figsize=(10, 7))
-sns.barplot(distributions["generic"],
-            y="variable",
-            x="value",
-            hue="group",
-            ax=ax[0])
-        
-sns.barplot(distributions["specific"],
-            y="variable",
-            x="value",
-            hue="group",
-            ax=ax[1])
-ax[0].get_legend().remove()
-ax[0].set_ylabel("")
-ax[1].set_ylabel("")
-ax[0].set_xlabel("Frequency")
-ax[1].set_xlabel("Frequency")
 
-plt.tight_layout()
-plt.savefig("../plots/frame_eda/frequency_by_group.png")
-plt.savefig("../plots/frame_eda/frequency_by_group.pdf")
+def diversity(df):
+    raw = df.values
+    frame_distribution = np.sum(raw, axis=0) / np.sum(raw)
+
+    normed_entropy = entropy(frame_distribution) / np.log(frame_distribution.shape[0])
+
+    return normed_entropy
+
 # %%
-fig, ax = plt.subplots(figsize=(4, 6))
-sns.barplot(distributions["narrative"],
-            y="value",
-            x="variable",
-            hue="group",
-            ax=ax)
+rerun_bootstrap = False
 
-ax.set_xlabel("")
-ax.set_ylabel("Frequency")
-plt.savefig("../plots/frame_eda/narrative_frequency.png")
-plt.savefig("../plots/frame_eda/narrative_frequency.pdf")
+if rerun_bootstrap:
+    diversity_rows = []
+    for frame_type in frame_types:
+        type_rows = []
+        for group in groups:
+
+            gtdf = frames[group][config["frames"][frame_type]]
+
+            diversity_ci = bootstrap_ci_multivariate(gtdf,
+                                                     diversity,
+                                                     10000,
+                                                     "rows",
+                                                     0.05)
+
+            row_dict = {"group": group,
+                        "frame_type": frame_type,
+                        "lower": diversity_ci["lower"],
+                        "diversity": diversity_ci["estimate"],
+                        "upper": diversity_ci["upper"]}
+            diversity_rows.append(row_dict)
+
+
+    div_df = pd.DataFrame(diversity_rows)
+
+else:
+    div_df = pd.read_csv("../data/eda_bootstrap/coarse_diversity_boot.tsv", sep="\t")
 # %%
-diversities = {}
-for frame_type in frame_types:
-    type_rows = []
-    for group in groups:
+fig, ax = plt.subplots()
 
-        # we just need normalized vectors and group labels for seaborn
-        normed_sums = frame_sums[group][frame_type] / np.sum(frame_sums[group][frame_type])
-        diversity = entropy(normed_sums) / len(config["frames"][frame_type])
-        row_dict = {"group": group, "diversity": diversity}
-        type_rows.append(row_dict)
+pad = 2
 
-    # convert to long for seaborn
-    df_wide = pd.DataFrame(type_rows)
+bar_x_coords = [np.arange(i, 
+                          (len(groups) + pad) * len(frame_types) + i,
+                          len(groups) + pad)
+                for i in range(len(groups))]
 
-    diversities[frame_type] = df_wide
+xticks = np.arange(1.5,
+                   (len(groups)+pad) * len(frame_types),
+                   len(groups) + pad)
+for i, group in enumerate(groups):
+    group_df = div_df[div_df["group"] == group]
 
-fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
-sns.barplot(diversities["generic"],
-            x="group",
-            y="diversity",
-            ax=ax[0])
-ax[0].set_xlabel("")
-ax[0].set_title("Generic Frames")
+    ax.scatter(bar_x_coords[i], group_df["diversity"], label=f"{group.title()}")
+    ax.vlines(bar_x_coords[i], group_df["lower"], group_df["upper"], color="black")
 
-sns.barplot(diversities["specific"],
-            x="group",
-            y="diversity",
-            ax=ax[1])
-ax[1].set_xlabel("")
-ax[1].set_title("Specific Frames")
+ax.set_xticks(xticks)
+ax.set_xticklabels([ft.title() for ft in frame_types])
+ax.set_ylabel("Diversity")
+ax.legend(loc="upper left")
 
-plt.tight_layout()
-plt.savefig("../plots/frame_eda/frame_diversity.png")
-plt.savefig("../plots/frame_eda/frame_diversity.pdf")
+fig.savefig("../plots/frame_eda/coarse_diversity.png")
+fig.savefig("../plots/frame_eda/coarse_diversity.pdf")
 # %%
 frame_matrices = {}
 frame_labels = {k: [] for k in frame_types}
