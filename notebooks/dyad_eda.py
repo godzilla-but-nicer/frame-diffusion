@@ -97,11 +97,17 @@ replies_to_congress = dyad_df[replies_only & from_public & to_congress]
 with open("workflow/config.json", "r") as config_file:
     config = json.loads(config_file.read())
 
-generic_frames = config["frames"]["generic"].copy()
-generic_frames.append("id_str")
-public_generic_frames = public_frames[generic_frames]
 
-congress_frames = pd.read_csv("data/binary_frames/congress/congress_generic.tsv", sep="\t")
-
-reply_frames = 
+# %% [markdown]
+# ## Plans for analysis
+#
+# As I wait for the data to finish getting ready let's think about what we want to do with it. 
+#
+# 1. Figure out how to quantify aggreement across dyads. can we use hamming distance?
+# 1. Use this agreement metric to quantify agreement across different types of interaction: quote, reply, retweet
+# 1. Are there groups that tend to agree more or less? What about political affiliation?
+# 1. For a given user can we predict their frames from the frames of their neighbors? 
+# - How do we do this? some kind of regression? take all of the neighbor frames and use them against user framing decisions?
+# 1. Very simple EDA like degree distribution would be cool
+# 1. Along those lines its probably worth looking at just who is interacting most
 # %%

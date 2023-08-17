@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import tweet_handler as th
 
+from glob import glob
+
 configfile: "workflow/config.json"
 
 journalists = pd.read_csv("data/user_info/top_536_journos.tsv", sep="\t")["username"]
@@ -20,6 +22,7 @@ rule download_congress_tweets:
 
 
 # takes multiple days, thousands of api requests
+# elon destroyed this step of the workflow
 rule download_journalist_tweets:
     input:
         "data/user_info/top_536_journos.tsv"
@@ -27,15 +30,6 @@ rule download_journalist_tweets:
         expand("data/immigration_tweets/journalists/{journalist}.json", journalist=journalists)
     script:
         "scripts/download_journalist_tweets.py"
-
-# another long one, gets the tweets one retweet, quote, or reply away
-rule download_adjacent_tweets:
-    input:
-        "data/immigration_tweets/US.gz"
-    output:
-        "data/immigration_tweets/US_one_step.gz"
-    script:
-        "scripts/download_adjacent_tweets.py"
 
 
 # pulling out the immigration subset from trump twitter archive
@@ -99,6 +93,26 @@ rule build_congress_table:
             df.to_csv(tsv_file, sep="\t", index=False)
 
 
+rule build_congress_nonimmigration_table:
+    input:
+        "data/non_immigration_tweets/congress.json"
+    output:
+        "data/non_immigration_tweets/congress.tsv"
+    run:
+        with open(input[0], "r") as json_file:
+            tweets = json.loads(json_file.read())
+
+        df_rows = []
+        for tweet in tweets:
+            if "id" not in tweet:
+                continue
+            row = th.parse_tweet_json(tweet, "congress")
+            df_rows.append(row)
+        
+        df = pd.DataFrame(df_rows)
+        with open(output[0], "w") as tsv_file:
+            df.to_csv(tsv_file, sep="\t", index=False)
+
 rule build_trump_table:
     input:
         "data/immigration_tweets/trump.json"
@@ -138,6 +152,36 @@ rule build_journalist_table:
         with open(output[0], "w") as tsv_file:
             df.to_csv(tsv_file, sep="\t", index=False)
 
+rule build_retweet_table:
+    input:
+        "data/decahose_retweets/"
+    output:
+        "data/decahose_retweets/{year}_retweets.tsv"
+    run:
+        input_files = glob(input[0] + f"/decahose.{wildcards.year}*.gz")
+#            print(f'{input[0] + "*.gz"}')
+#            print(input_files)
+
+        all_df_rows = []
+        for f in input_files:
+            
+            try:
+                new_df_rows = []
+                for json_str in gzip.open(f):
+                    tweet = json.loads(json_str)
+                    row = th.parse_tweet_json(tweet, "v1")
+                    new_df_rows.append(row)
+                
+                all_df_rows.extend(new_df_rows)
+            
+            except:
+                continue
+            
+        
+        df = pd.DataFrame(all_df_rows)
+        with open(output[0], "w") as tsv_file:
+            df.to_csv(tsv_file, sep="\t", index=False)
+
 
 # 3. Use classifier to identify frames in our tweet data
 rule classify_congress_tweets:
@@ -171,3 +215,13 @@ rule classify_journalist_tweets:
         "data/binary_frames/journalists/journalists_narrative.tsv"
     shell:
         "python scripts/classify_tweet_frames.py journalists"
+
+rule classify_retweets:
+    input:
+        expand("data/decahose_retweets/{year}_retweets.tsv", year=["2018", "2019"])
+    output:
+        "data/binary_frames/retweets/retweets_generic.tsv",
+        "data/binary_frames/retweets/retweets_specific.tsv",
+        "data/binary_frames/retweets/retweets_narrative.tsv"
+    shell:
+        "python scripts/classify_tweet_frames.py retweets"

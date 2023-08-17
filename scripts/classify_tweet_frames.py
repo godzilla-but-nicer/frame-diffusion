@@ -19,8 +19,26 @@ with open("workflow/config.json", "r") as cf:
 
 
 # load the correct data according to the command line arg
-data_file = f"data/immigration_tweets/{sys.argv[1]}.tsv"
-tweets = pd.read_csv(data_file, sep="\t").dropna(subset="text")
+if sys.argv[1] == "trump" or sys.argv[1] == "congress" or sys.argv[1] == "journalists":
+    data_file = f"data/immigration_tweets/{sys.argv[1]}.tsv"
+elif sys.argv[1] == "congress-general":
+    data_file = f"data/non_immigration_tweets/congress.tsv"
+elif sys.argv[1] == "retweets":
+    data_file = [f"data/decahose_retweets/2018_retweets.tsv",
+                  f"data/decahose_retweets/2019_retweets.tsv"]
+else:
+    raise(IOError, "Bad command line argument")
+
+if len(data_file) == 1:
+    tweets = pd.read_csv(data_file, sep="\t").dropna(subset="text")
+else:
+    tweet_parts = []
+    for f in data_file:
+        tweet_parts.append(pd.read_csv(f, sep="\t").dropna(subset="text"))
+
+    tweets = pd.concat(tweet_parts)
+
+
 
 
 # load the models
@@ -41,19 +59,13 @@ models["generic"] = general
 models["specific"] = specific
 models["narrative"] = narrative
 
+# pull out the texts and ids
+texts = list(tweets["text"])
+ids = list(tweets["id_str"])
 
-# ok we're going to exclude straight retweets so first we'll make a list
-ids = []
-texts = []
-for _, tweet in tweets.iterrows():
-    if len(tweet["text"]) > 0:
-        pred_text = th.filter_retweet(tweet["text"])
-        if pred_text:
-            ids.append(tweet["id_str"])
-            texts.append(pred_text)
 
 # finally we can do the classification, I'm going to pull the code from notebook
-labels = ["narrative"] # ["generic", "specific", "narrative"]
+labels = ["generic", "specific", "narrative"]
 for frame_type in labels:
 
     frame_labels = config["frames"][frame_type]
