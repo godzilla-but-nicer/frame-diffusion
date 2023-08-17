@@ -18,6 +18,14 @@ def get_tweet_text(obj):
         tweet_text = obj['text']
     return tweet_text.replace('\t', ' ').replace('\n', ' ')
 
+def get_retweet_text(obj):
+    if "retweeted_status" not in obj:
+        return None
+    else:
+        retweet_text = get_tweet_text(obj["retweeted_status"])
+    
+    return retweet_text
+
 
 def load_tweets_from_gz(filename, keep_ids=None):
     all_tweets = []
@@ -244,8 +252,11 @@ def parse_tweet_json(tweet_json: dict, source: str = "v2") -> dict:
     elif source == "v1":
         new_row = parse_tweet_json_v1(tweet_json)
 
+    elif source == "v1_retweet":
+        new_row = parse_retweet_json_v1(tweet_json)
+
     else:
-        return ValueError(f"No source '{source}' implemented for parse_tweet_json")
+        raise ValueError(f"No source '{source}' implemented for parse_tweet_json")
 
     return new_row
 
@@ -300,6 +311,32 @@ def parse_tweet_json_v1(tweet_json: dict) -> dict:
     return new_row
 
 
+def parse_retweet_json_v1(tweet_json: dict) -> dict:
+    # we must build up the rows by unpacking the json dict
+    new_row = {}
+
+    # main tweet features. every tweet should have these
+    new_row["id_str"] = tweet_json["id"]
+
+    time_stamp = datetime.strptime(
+        tweet_json["created_at"], "%a %b %d %H:%M:%S +0000 %Y")
+    new_row["year"] = time_stamp.year
+    new_row["time_stamp"] = time_stamp
+    new_row["screen_name"] = tweet_json["user"]["screen_name"]
+
+    new_row["text"] = get_retweet_text(tweet_json)
+
+    # metrics. every tweet should also have these
+    new_row["quote_count"] = tweet_json["quote_count"]
+    new_row["reply_count"] = tweet_json["reply_count"]
+    new_row["favorite_count"] = tweet_json["favorite_count"]
+    new_row["retweet_count"] = tweet_json["retweet_count"]
+
+    # interactions with other tweets, not all tweets will have this
+    if tweet_json["in_reply_to_status_id"] != "null":
+        new_row["reply_to_id"] = tweet_json["in_reply_to_status_id"]
+
+    return new_row
 def parse_tweet_json_v2(tweet_json: dict) -> dict:
     # we must build up the rows by unpacking the json dict
     new_row = {}
