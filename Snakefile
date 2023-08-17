@@ -169,7 +169,7 @@ rule build_retweet_table:
                 new_df_rows = []
                 for json_str in gzip.open(f):
                     tweet = json.loads(json_str)
-                    row = th.parse_tweet_json(tweet, "v1")
+                    row = th.parse_tweet_json(tweet, "v1_retweet")
                     new_df_rows.append(row)
                 
                 all_df_rows.extend(new_df_rows)
