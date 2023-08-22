@@ -5,6 +5,7 @@ import pandas as pd
 import tweet_handler as th
 
 from glob import glob
+from tqdm import tqdm
 
 configfile: "workflow/config.json"
 
@@ -113,6 +114,7 @@ rule build_congress_nonimmigration_table:
         with open(output[0], "w") as tsv_file:
             df.to_csv(tsv_file, sep="\t", index=False)
 
+
 rule build_trump_table:
     input:
         "data/immigration_tweets/trump.json"
@@ -159,8 +161,6 @@ rule build_retweet_table:
         "data/decahose_retweets/{year}_retweets.tsv"
     run:
         input_files = glob(input[0] + f"/decahose.{wildcards.year}*.gz")
-#            print(f'{input[0] + "*.gz"}')
-#            print(input_files)
 
         all_df_rows = []
         for f in input_files:
@@ -181,6 +181,30 @@ rule build_retweet_table:
         df = pd.DataFrame(all_df_rows)
         with open(output[0], "w") as tsv_file:
             df.to_csv(tsv_file, sep="\t", index=False)
+
+
+rule collect_retweet_json:
+    input:
+        "data/decahose_retweets/"
+    output:
+        "data/decahose_retweets/{year}_retweets.gz"
+    run:
+        gzip_files = glob(f"data/decahose_retweets/decahose.{wildcards.year}-*.gz")
+
+        json_entries = []
+        for file in tqdm(gzip_files):
+            try:
+                for tweet in gzip.open(file):
+                    part_json = json.loads(tweet)
+                    json_entries.extend(part_json)
+
+            except:
+                print(f"File may be corrupted: {file}")
+                continue
+
+
+        with gzip.open(f"data/decahose_retweets/{wildcards.year}_retweets.gz", "wt", encoding="UTF-8") as gz_fout:
+            json.dump(json_entries, gz_fout)
 
 
 # 3. Use classifier to identify frames in our tweet data
@@ -216,6 +240,7 @@ rule classify_journalist_tweets:
     shell:
         "python scripts/classify_tweet_frames.py journalists"
 
+
 rule classify_retweets:
     input:
         expand("data/decahose_retweets/{year}_retweets.tsv", year=["2018", "2019"])
@@ -225,3 +250,22 @@ rule classify_retweets:
         "data/binary_frames/retweets/retweets_narrative.tsv"
     shell:
         "python scripts/classify_tweet_frames.py retweets"
+
+
+rule identify_successors:
+    input:
+        "data/immigration_tweets/US_2018.gz",
+        "data/immigration_tweets/US_2019.gz",
+        "data/immigration_tweets/journalists.json",
+        "data/immigration_tweets/congress.json",
+        "data/decahose_retweets/"
+    output:
+        "data/edge_lists/public_2018_successors.tsv",
+        "data/edge_lists/public_2019_successors.tsv",
+        "data/edge_lists/journalists_successors.tsv",
+        "data/edge_lists/congress_successors.tsv",
+        "data/edge_lists/retweet_successors.tsv"
+
+    shell:
+        "python scripts/extract_all_out_edges.py"
+

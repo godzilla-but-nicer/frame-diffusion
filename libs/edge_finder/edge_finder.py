@@ -6,8 +6,8 @@ from typing import Dict, Optional
 from tqdm import tqdm
 
 
-def check_connections(tweet_json: Dict, group: str) -> Optional[Dict]:
-    successors = identify_successors(tweet_json, group)
+def check_connections(tweet_json: Dict, group: str, check_mentions=False) -> Optional[Dict]:
+    successors = identify_successors(tweet_json, group, check_mentions)
 
     signifiers = ["mention_0", "reply_to", "quote_of", "retweet_of"]
 
@@ -105,7 +105,7 @@ def build_sample_catalog(paths: Dict) -> Dict:
     return catalog
 
 
-def identify_successors(tweet_json: Dict, group: str) -> Dict:
+def identify_successors(tweet_json: Dict, group: str, check_mentions=False) -> Dict:
 
     succs = {}
 
@@ -115,10 +115,11 @@ def identify_successors(tweet_json: Dict, group: str) -> Dict:
         succs["user_id"] = str(tweet_json["user"]["id"])
         succs["user_name"] = tweet_json["user"]["screen_name"]
 
-        stripped_of_rt = re.sub(r"RT @[a-zA-Z0-9]+\W", "", tweet_json["text"])
-        mentions = re.findall(r"@([a-zA-Z0-9]+)", stripped_of_rt)
-        for m, mention in enumerate(mentions):
-            succs["mention_" + str(m)] = mention
+        if check_mentions:
+            stripped_of_rt = re.sub(r"RT @[a-zA-Z0-9]+\W", "", tweet_json["text"])
+            mentions = re.findall(r"@([a-zA-Z0-9]+)", stripped_of_rt)
+            for m, mention in enumerate(mentions):
+                succs["mention_" + str(m)] = mention
 
         if tweet_json["in_reply_to_status_id"]:
             succs["reply_to"] = str(tweet_json["in_reply_to_status_id"])
@@ -129,16 +130,23 @@ def identify_successors(tweet_json: Dict, group: str) -> Dict:
             succs["quote_of_user"] = str(
                 tweet_json["quoted_status"]["user"]["id"])
 
+        elif "retweeted_status" in tweet_json:
+            succs["retweet_of"] = str(tweet_json["retweeted_status"]["id"])
+            succs["retweet_of_user"] = str(
+                tweet_json["retweeted_status"]["user"]["id"])
+        
+
     elif group == "journalists":
 
         succs["tweet_id"] = str(tweet_json["id"])
         succs["user_id"] = str(tweet_json["author_id"])
         succs["user_name"] = tweet_json["screen_name"]
 
-        stripped_of_rt = re.sub(r"RT @[a-zA-Z0-9]+\W", "", tweet_json["text"])
-        mentions = re.findall(r"@([a-zA-Z0-9]+)", stripped_of_rt)
-        for m, mention in enumerate(mentions):
-            succs["mention_" + str(m)] = mention
+        if check_mentions:
+            stripped_of_rt = re.sub(r"RT @[a-zA-Z0-9]+\W", "", tweet_json["text"])
+            mentions = re.findall(r"@([a-zA-Z0-9]+)", stripped_of_rt)
+            for m, mention in enumerate(mentions):
+                succs["mention_" + str(m)] = mention
 
         if "referenced_tweets" in tweet_json:
 
@@ -178,11 +186,12 @@ def identify_successors(tweet_json: Dict, group: str) -> Dict:
                    "user_id": tweet_json["user_id"],
                    "user_name": tweet_json["screen_name"]}
 
-        stripped_of_rt = re.sub(r"RT @[a-zA-Z0-9]+\W", "", tweet_json["text"])
-        mentions = re.findall(r"@([a-zA-Z0-9]+)", stripped_of_rt)
-        for m, mention in enumerate(mentions):
-            succs["mention_" + str(m)] = mention
-            succs.update(id_info)
+        if check_mentions:
+            stripped_of_rt = re.sub(r"RT @[a-zA-Z0-9]+\W", "", tweet_json["text"])
+            mentions = re.findall(r"@([a-zA-Z0-9]+)", stripped_of_rt)
+            for m, mention in enumerate(mentions):
+                succs["mention_" + str(m)] = mention
+                succs.update(id_info)
 
         if re.match(r"RT @[a-zA-Z0-9_]+", tweet_json["text"]):
             succs.update(id_info)

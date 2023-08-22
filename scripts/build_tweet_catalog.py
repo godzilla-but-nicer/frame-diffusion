@@ -25,15 +25,23 @@ for tweet_json in tqdm(gzip.open(paths["public"]["2019_json"])):
     tweet = json.loads(tweet_json)
     tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
 
+
 print("Catalogging Journalists tweets")
 with open(paths["journalists"]["tweet_json"], "r") as json_file:
     for tweet in tqdm(json.loads(json_file.read())):
         tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
 
+
 print("Catalogging Congress tweets")
 with open(paths["congress"]["tweet_json"], "r") as json_file:
     for tweet in tqdm(json.loads(json_file.read())):
         tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
+
+
+print("Catalogging Retweets")
+for tweet_json in tqdm(gzip.open(paths["public"]["2018_retweets"])):
+    tweet = json.loads(tweet_json)
+    tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
 
 
 print("Writing file")
