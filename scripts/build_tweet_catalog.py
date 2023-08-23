@@ -2,6 +2,7 @@ import gzip
 import json
 import pandas as pd
 import numpy as np
+from glob import glob
 from tqdm import tqdm
 from functools import reduce
 
@@ -36,17 +37,14 @@ print("Catalogging Congress tweets")
 with open(paths["congress"]["tweet_json"], "r") as json_file:
     for tweet in tqdm(json.loads(json_file.read())):
         tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
-print(type(tweet_catalog))
 
-# print("Catalogging 2018 Retweets")
-# for tweet_json in tqdm(gzip.open(paths["public"]["2018_retweets"])):
-#     for tweet in json.loads(tweet_json):
-#         tweet_catalog[str(tweet["id_str"])] = json.dumps(tweet)
-# 
-# print("Catalogging 2019 Retweets")
-# for tweet_json in tqdm(gzip.open(paths["public"]["2019_retweets"])):
-#     for tweet in json.loads(tweet_json):
-#         tweet_catalog[str(tweet["id_str"])] = json.dumps(tweet)
+
+print("Catalogging Retweets")
+for file in tqdm(glob(paths["public"]["retweet_dir"] + "decahose.*.gz")):
+    for tweet_json in gzip.open(file):
+        for tweet in json.loads(tweet_json):
+            tweet_catalog[str(tweet["id_str"])] = json.dumps(tweet)
+
 
 print("Writing file")
 with open("data/immigration_tweets/tweets_by_id.json", "w") as tc_fout:

@@ -27,7 +27,6 @@
         "2019_json": "data/immigration_tweets/US_2019.gz",
         "2018_edges": "data/edge_lists/public_2018_successors.tsv",
         "2019_edges": "data/edge_lists/public_2019_successors.tsv",
-        "2018_retweets": "data/decahose_retweets/2018_retweets.gz",
-        "2019_retweets": "data/decahose_retweets/2019_retweets.gz"
+        "retweet_dir": "data/decahose_retweets/"
     }
 }
