@@ -41,9 +41,12 @@ with open(paths["congress"]["tweet_json"], "r") as json_file:
 
 print("Catalogging Retweets")
 for file in tqdm(glob(paths["public"]["retweet_dir"] + "decahose.*.gz")):
-    for tweet_json in gzip.open(file):
-        for tweet in json.loads(tweet_json):
+    try:
+        for tweet_json in gzip.open(file):
+            tweet = json.loads(tweet_json)
             tweet_catalog[str(tweet["id_str"])] = json.dumps(tweet)
+    except:
+        continue
 
 
 print("Writing file")
