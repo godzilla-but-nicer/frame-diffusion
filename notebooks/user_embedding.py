@@ -105,14 +105,22 @@ def frame_spread(df: pd.DataFrame) -> float:
 import warnings
 warnings.filterwarnings("error")
 
+import powerlaw
+
 user_spreads = []
+normed_user_spreads = []
+users = []
+groups = []
 for i, user in enumerate(tqdm(all_frames["screen_name"].unique())):
     user_frames = all_frames[all_frames["screen_name"] == user]
-    if user_frames.shape[0] < 10:
+    if user_frames.shape[0] < 30:
         continue
 
     try:
         user_spreads.append(frame_spread(user_frames))
+        normed_user_spreads.append(frame_spread(user_spreads) / user_frames.shape[0])
+        users.append(user)
+        groups.append(user_frames["group"].unique()[0])
     
     except RuntimeWarning as w:
         print(w)
@@ -124,7 +132,41 @@ for i, user in enumerate(tqdm(all_frames["screen_name"].unique())):
         print(user_frames)
         break
 
+spread_array = np.array(user_spreads)
+normed_array = np.array(normed_user_spreads)
+user_array = np.array(users)
+group_array = np.array(groups)
+# %%
+vals, counts = np.unique(spread_array, return_counts=True)
+cdf = np.cumsum(counts) / np.sum(counts)
 
-plt.hist(user_spreads, bins=30, log=True)
+plt.set_title("Overall Distribution")
+plt.scatter(vals, 1-cdf)
+plt.xscale("log")
+plt.yscale("log")
+plt.show()
+
+# %%
+congress_spreads = spread_array[group_array == "congress"]
+journalist_spreads = spread_array[group_array == "journalists"]
+trump_spread = spread_array[group_array == "trump"]
+
+c_vals, c_counts = np.unique(congress_spreads, return_counts=True)
+c_cdf = np.cumsum(c_counts) / np.sum(c_counts)
+
+j_vals, j_counts = np.unique(journalist_spreads, return_counts=True)
+j_cdf = np.cumsum(j_counts) / np.sum(j_counts)
+
+plt.scatter(c_vals, 1 - c_cdf, label = "congress")
+plt.scatter(j_vals, 1 - j_cdf, label = "journalists")
+plt.axvline(trump_spread, label="trump")
+plt.xscale("log")
+plt.yscale("log")
+plt.xlabel("Frame Spread")
+plt.ylabel("P(Frame Spread)")
+plt.legend()
 plt.show()
 # %%
+user_array
+# %% [markdown]
+

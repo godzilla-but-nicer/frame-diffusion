@@ -38,11 +38,15 @@ with open(paths["congress"]["tweet_json"], "r") as json_file:
         tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
 
 
-print("Catalogging Retweets")
+print("Catalogging 2018 Retweets")
 for tweet_json in tqdm(gzip.open(paths["public"]["2018_retweets"])):
-    tweet = json.loads(tweet_json)
-    tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
+    for tweet in json.loads(tweet_json):
+        tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
 
+print("Catalogging 2019 Retweets")
+for tweet_json in tqdm(gzip.open(paths["public"]["2019_retweets"])):
+    for tweet in json.loads(tweet_json):
+        tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
 
 print("Writing file")
 with open("data/immigration_tweets/tweets_by_id.json", "w") as tc_fout:
