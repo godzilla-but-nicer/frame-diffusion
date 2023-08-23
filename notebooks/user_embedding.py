@@ -118,7 +118,7 @@ for i, user in enumerate(tqdm(all_frames["screen_name"].unique())):
 
     try:
         user_spreads.append(frame_spread(user_frames))
-        normed_user_spreads.append(frame_spread(user_spreads) / user_frames.shape[0])
+        normed_user_spreads.append(frame_spread(user_frames) / user_frames.shape[0])
         users.append(user)
         groups.append(user_frames["group"].unique()[0])
     
@@ -147,9 +147,9 @@ plt.yscale("log")
 plt.show()
 
 # %%
-congress_spreads = spread_array[group_array == "congress"]
-journalist_spreads = spread_array[group_array == "journalists"]
-trump_spread = spread_array[group_array == "trump"]
+congress_spreads = normed_array[group_array == "congress"]
+journalist_spreads = normed_array[group_array == "journalists"]
+trump_spread = normed_array[group_array == "trump"]
 
 c_vals, c_counts = np.unique(congress_spreads, return_counts=True)
 c_cdf = np.cumsum(c_counts) / np.sum(c_counts)
@@ -159,7 +159,7 @@ j_cdf = np.cumsum(j_counts) / np.sum(j_counts)
 
 plt.scatter(c_vals, 1 - c_cdf, label = "congress")
 plt.scatter(j_vals, 1 - j_cdf, label = "journalists")
-plt.axvline(trump_spread, label="trump")
+plt.axvline(trump_spread, label="trump", c="green")
 plt.xscale("log")
 plt.yscale("log")
 plt.xlabel("Frame Spread")
