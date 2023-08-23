@@ -53,14 +53,17 @@ rule get_us_tweet_ids_times:
     run:
         ids = []
         time_stamps = []
+        screen_names = []
         for i in range(2):
             with gzip.open(input[i], 'r') as f:
                 for i, line in enumerate(f):
                     tweet = th.load_tweet_obj(line)
                     ids.append(tweet["id_str"])
                     time_stamps.append(tweet["created_at"])
+                    screen_names.append(tweet["user"]["screen_name"])
+
         
-        df = pd.DataFrame({"id_str": ids, "time_stamp": time_stamps})
+        df = pd.DataFrame({"id_str": ids, "time_stamp": time_stamps, "screen_name": screen_names})
         df.to_csv(output[0], sep="\t", index=False)
 
 
