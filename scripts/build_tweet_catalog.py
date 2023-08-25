@@ -42,10 +42,7 @@ if sys.argv[1] == "":
 
     print("Writing file")
     with open("data/immigration_tweets/tweets_by_id.json", "w") as tc_fout:
-        tc_fout.write("{\n")
-        for id_str in tqdm(tweet_catalog.keys()):
-            tc_fout.write(f'"{id_str}": {tweet_catalog[id_str]},\n')
-        tc_fout.write("}\n")
+        json.dump(tweet_catalog, tc_fout)
 
 if sys.argv[1] == "retweets":
     print("Catalogging Retweets")
@@ -59,7 +56,4 @@ if sys.argv[1] == "retweets":
 
     print("Writing file")
     with open(sys.argv[2], "w") as tc_fout:
-        tc_fout.write("{\n")
-        for id_str in tqdm(tweet_catalog.keys()):
-            tc_fout.write(f'"{id_str}": {tweet_catalog[id_str]},\n')
-        tc_fout.write("}\n")
+        json.dump(tweet_catalog, tc_fout)
