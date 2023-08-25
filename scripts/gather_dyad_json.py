@@ -30,5 +30,5 @@ for row_i, dyad in tqdm(in_sample_dyads.iterrows()):
 
     json_list.append(json.dumps(dyad_json))
 
-with gzip.open("data/edge_lists/full_dyads.gz", "wb") as fout:
-    fout.write(json_list.encode())
+with open("data/edge_lists/full_dyads.json", "w") as fout:
+    json.dump(json_list, fout)
