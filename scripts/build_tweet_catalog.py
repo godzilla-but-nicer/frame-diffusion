@@ -18,7 +18,7 @@ tweet_catalog = {}
 
 # this is an annoying part, we have to iterate over each json file
 # and put all of the relevant json into the catalog keyed by the id string
-if sys.argv[1] == "": 
+if len(sys.argv) == 1: 
     print("Catalogging Public tweets")
     for tweet_json in tqdm(gzip.open(paths["public"]["2018_json"])):
         tweet = json.loads(tweet_json)
