@@ -44,7 +44,7 @@ if len(sys.argv) == 1:
     with open("data/immigration_tweets/tweets_by_id.json", "w") as tc_fout:
         json.dump(tweet_catalog, tc_fout)
 
-if sys.argv[1] == "retweets":
+elif sys.argv[1] == "retweets":
     print("Catalogging Retweets")
     for file in tqdm(glob(paths["public"]["retweet_dir"] + "decahose.*.gz")):
         try:
