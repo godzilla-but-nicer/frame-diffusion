@@ -46,7 +46,8 @@ if len(sys.argv) == 1:
 
 elif sys.argv[1] == "retweets":
     print("Catalogging Retweets")
-    for file in tqdm(glob(paths["public"]["retweet_dir"] + "decahose.*.gz")):
+    year = sys.argv[3]
+    for file in tqdm(glob(paths["public"]["retweet_dir"] + f"decahose.{year}*.gz")):
         try:
             for tweet_json in gzip.open(file):
                 tweet = json.loads(tweet_json)
