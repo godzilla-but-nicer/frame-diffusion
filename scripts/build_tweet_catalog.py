@@ -2,6 +2,7 @@ import gzip
 import json
 import pandas as pd
 import numpy as np
+import sys
 from glob import glob
 from tqdm import tqdm
 from functools import reduce
@@ -17,37 +18,51 @@ tweet_catalog = {}
 
 # this is an annoying part, we have to iterate over each json file
 # and put all of the relevant json into the catalog keyed by the id string
-print("Catalogging Public tweets")
-for tweet_json in tqdm(gzip.open(paths["public"]["2018_json"])):
-    tweet = json.loads(tweet_json)
-    tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
+if sys.argv[1] == "": 
+    print("Catalogging Public tweets")
+    for tweet_json in tqdm(gzip.open(paths["public"]["2018_json"])):
+        tweet = json.loads(tweet_json)
+        tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
 
-for tweet_json in tqdm(gzip.open(paths["public"]["2019_json"])):
-    tweet = json.loads(tweet_json)
-    tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
-
-
-print("Catalogging Journalists tweets")
-with open(paths["journalists"]["tweet_json"], "r") as json_file:
-    for tweet in tqdm(json.loads(json_file.read())):
-        tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
+    for tweet_json in tqdm(gzip.open(paths["public"]["2019_json"])):
+        tweet = json.loads(tweet_json)
+        tweet_catalog[tweet["id_str"]] = json.dumps(tweet)
 
 
-print("Catalogging Congress tweets")
-with open(paths["congress"]["tweet_json"], "r") as json_file:
-    for tweet in tqdm(json.loads(json_file.read())):
-        tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
+    print("Catalogging Journalists tweets")
+    with open(paths["journalists"]["tweet_json"], "r") as json_file:
+        for tweet in tqdm(json.loads(json_file.read())):
+            tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
 
 
-# print("Catalogging Retweets")
-# for file in tqdm(glob(paths["public"]["retweet_dir"] + "decahose.*.gz")):
-#     try:
-#         for tweet_json in gzip.open(file):
-#             tweet = json.loads(tweet_json)
-#             tweet_catalog[str(tweet["id_str"])] = json.dumps(tweet)
-#     except:
-#         continue
+    print("Catalogging Congress tweets")
+    with open(paths["congress"]["tweet_json"], "r") as json_file:
+        for tweet in tqdm(json.loads(json_file.read())):
+            tweet_catalog[str(tweet["id"])] = json.dumps(tweet)
 
+    print("Writing file")
+    with open("data/immigration_tweets/tweets_by_id.json", "w") as tc_fout:
+        tc_fout.write("{\n")
+        for id_str in tqdm(tweet_catalog.keys()):
+            tc_fout.write(f'"{id_str}": {tweet_catalog[id_str]},\n')
+        tc_fout.write("}\n")
+
+if sys.argv[1] == "retweets":
+    print("Catalogging Retweets")
+    for file in tqdm(glob(paths["public"]["retweet_dir"] + "decahose.*.gz")):
+        try:
+            for tweet_json in gzip.open(file):
+                tweet = json.loads(tweet_json)
+                tweet_catalog[str(tweet["id_str"])] = json.dumps(tweet)
+        except:
+            continue
+
+    print("Writing file")
+    with open("data/immigration_tweets/retweets_by_id.json", "w") as tc_fout:
+        tc_fout.write("{\n")
+        for id_str in tqdm(tweet_catalog.keys()):
+            tc_fout.write(f'"{id_str}": {tweet_catalog[id_str]},\n')
+        tc_fout.write("}\n")
 
 print("Writing file")
 with open("data/immigration_tweets/tweets_by_id.json", "w") as tc_fout:
