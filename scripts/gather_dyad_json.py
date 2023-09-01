@@ -10,7 +10,7 @@ in_sample_dyads = pd.read_csv("data/edge_lists/in_sample_dyads.tsv", sep="\t")
 with open("data/immigration_tweets/tweets_by_id.json", "r") as tweet_fin:
     tweet_catalog = json.loads(tweet_fin.read())
 
-frame_catalog = pd.read_csv("data/binary_frames/all_group_frames.tsv", sep="\t").drop(["text", "Unnamed: 0"], axis="columns")
+frame_catalog = pd.read_csv("data/binary_frames/all_group_frames.tsv", sep="\t").drop(["text", "Unnamed: 0", "Threat", "Victim", "Hero"], axis="columns")
 
 json_list = []
 
