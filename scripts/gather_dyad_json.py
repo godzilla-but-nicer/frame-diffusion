@@ -14,7 +14,7 @@ frame_catalog = pd.read_csv("data/binary_frames/all_group_frames.tsv", sep="\t")
 frame_catalog["id_str"] = frame_catalog["id_str"].astype(str)
 json_list = []
 
-for row_i, dyad in tqdm(in_sample_dyads.iterrows()):
+for row_i, dyad in in_sample_dyads.iterrows():
     dyad_json = {}
     
     dyad_json["source_full"] = json.loads(tweet_catalog[str(dyad["tweet_id"])])
