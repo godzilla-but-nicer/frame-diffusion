@@ -42,8 +42,17 @@ tfdf = reduce(lambda l, r: pd.merge(l, r.drop("text", axis="columns"),
               on="id_str"),
               congress_frames_by_type)
 
+retweet_frames_by_type = []
+for frame_type in config["frames"].keys():
+      if frame_type != "low_f1":
+            retweet_frames_by_type.append(pd.read_csv(f"data/binary_frames/retweets/retweets_{frame_type}.tsv", sep="\t"))
 
-all_frames = pd.concat([pfdf, cfdf, jfdf, tfdf])
+rtdf = reduce(lambda l, r: pd.merge(l, r.drop("text", axis="columns"),
+              on="id_str"),
+              retweet_frames_by_type)
+
+
+all_frames = pd.concat([pfdf, cfdf, jfdf, tfdf, rtdf])
 all_frames.to_csv("data/binary_frames/all_group_frames.tsv",
                   sep="\t",
                   index=False)

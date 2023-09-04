@@ -254,6 +254,16 @@ rule classify_retweets:
     shell:
         "python scripts/classify_tweet_frames.py retweets"
 
+rule combine_all_frames:
+    input:
+        expand("data/binary_frames/{group}/{group}_{frame_type}.tsv",
+               group=["journalists", "trump", "retweets"],
+               frame_type=["generic", "specific", "narrative"])
+    output:
+        "data/binary_frames/all_group_frames.tsv"
+
+    shell:
+        "python scripts/scripts/build_all_frame_df.py"
 
 rule identify_successors:
     input:
