@@ -13,7 +13,7 @@ with open("data/immigration_tweets/tweets_by_id.json", "r") as tweet_fin:
 frame_catalog = pd.read_csv("data/binary_frames/all_group_frames.tsv", sep="\t").drop(["text", "Unnamed: 0", "Threat", "Victim", "Hero"], axis="columns")
 frame_catalog["id_str"] = frame_catalog["id_str"].astype(str)
 json_list = []
-
+print("Beginning Loop")
 for row_i, dyad in in_sample_dyads.iterrows():
     dyad_json = {}
     
@@ -33,5 +33,9 @@ for row_i, dyad in in_sample_dyads.iterrows():
 
     json_list.append(json.dumps(dyad_json))
 
+print("Writing File")
+
 with open("data/edge_lists/full_dyads.json", "w") as fout:
     json.dump(json_list, fout)
+
+print("Complete")
