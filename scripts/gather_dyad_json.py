@@ -21,6 +21,7 @@ for row_i, dyad in tqdm(in_sample_dyads.iterrows()):
     dyad_json["target_full"] = json.loads(tweet_catalog[str(dyad["target_id"])])
 
     dyad_json["source_frames"] = frame_catalog[frame_catalog["id_str"] == int(dyad["tweet_id"])].to_dict()
+    print(dyad_json["source_frames"])
     dyad_json["target_frames"] = frame_catalog[frame_catalog["id_str"] == int(dyad["target_id"])].to_dict()
 
     dyad_json["source_group"] = dyad["source_group"]
