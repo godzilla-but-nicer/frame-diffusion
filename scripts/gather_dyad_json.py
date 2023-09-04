@@ -11,7 +11,7 @@ with open("data/immigration_tweets/tweets_by_id.json", "r") as tweet_fin:
     tweet_catalog = json.loads(tweet_fin.read())
 
 frame_catalog = pd.read_csv("data/binary_frames/all_group_frames.tsv", sep="\t").drop(["text", "Unnamed: 0", "Threat", "Victim", "Hero"], axis="columns")
-# frame_catalog["id_str"] = frame_catalog["id_str"]
+frame_catalog["id_str"] = frame_catalog["id_str"].astype(int)
 json_list = []
 
 for row_i, dyad in tqdm(in_sample_dyads.iterrows()):
