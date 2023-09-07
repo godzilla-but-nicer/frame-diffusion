@@ -1,0 +1,32 @@
+{
+    "congress": {
+        "metadata": "data/user_info/congress_info.tsv",
+        "full_tweets": "data/down_sample/immigration_tweets/congress.tsv",
+        "tweet_json": "data/down_sample/immigration_tweets/congress.json",
+        "edges": "data/down_sample/edge_lists/congress_successors.tsv",
+        "frames": {
+            "specific": "data/down_sample/binary_frames/congress/congress_specific.tsv",
+            "generic": "data/down_sample/binary_frames/congress/congress_generic.tsv",
+            "narrative": "data/down_sample/binary_frames/congress/congress_narrative.tsv"
+        }
+    },
+    "journalists": {
+        "metadata": "data/user_info/top_536_journos.tsv",
+        "mbfc": "data/user_info/mbfc_data.tsv",
+        "full_tweets": "data/down_sample/immigration_tweets/journalists.tsv",
+        "tweet_json": "data/down_sample/immigration_tweets/journalists.json",
+        "edges": "data/down_sample/edge_lists/journalists_successors.tsv",
+        "frames": {
+            "specific": "data/down_sample/binary_frames/journalists/journalists_specific.tsv",
+            "generic": "data/down_sample/binary_frames/journalists/journalists_generic.tsv",
+            "narrative": "data/down_sample/binary_frames/journalists/journalists_narrative.tsv"
+        }
+    },
+    "public": {
+        "2018_json": "data/down_sample/immigration_tweets/US_2018.gz",
+        "2019_json": "data/down_sample/immigration_tweets/US_2019.gz",
+        "2018_edges": "data/down_sample/edge_lists/public_2018_successors.tsv",
+        "2019_edges": "data/down_sample/edge_lists/public_2019_successors.tsv",
+        "retweet_dir": "data/down_sample/decahose_retweets/"
+    }
+}
