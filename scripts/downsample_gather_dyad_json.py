@@ -2,8 +2,21 @@ import gzip
 import json
 import pandas as pd
 import numpy as np
+import re
 from tqdm import tqdm
+from typing import Dict
 from functools import reduce
+
+# convert ugly named series to nice little dict
+def frame_series_to_dict(frame_series: pd.Series, prefix: str) -> Dict:
+    old_dict = frame_series.to_dict()
+    new_dict = {}
+    for key in old_dict.keys():
+        new_key = re.sub(rf"^{prefix}", "", key)
+        new_dict[new_key] = old_dict[key]
+    
+    return new_dict
+
 
 in_sample_dyads = pd.read_csv("data/down_sample/edge_lists/in_sample_dyads.tsv", sep="\t")
 
@@ -12,20 +25,42 @@ with open("data/down_sample/immigration_tweets/tweets_by_id.json", "r") as tweet
 
 frame_catalog = pd.read_csv("data/down_sample/binary_frames/all_group_frames.tsv", sep="\t").drop(["text", "Unnamed: 0", "Threat", "Victim", "Hero"], axis="columns")
 print("Data Loaded to memory")
-frame_catalog["id_str"] = frame_catalog["id_str"].astype(str)
+
+
+# make a version of frame df with id str renamed tweet id for merging
+# also one with target_id
+print("Collecting frames")
+source_frames = (frame_catalog
+                 .add_prefix("s_")
+                 .rename({"s_id_str": "tweet_id"}, axis="columns"))
+target_frames = (frame_catalog
+                 .add_prefix("t_")
+                 .rename({"t_id_str": "target_id"}, axis="columns"))
+
+dyads_source = pd.merge(in_sample_dyads, source_frames, on="tweet_id")
+dyads_target = pd.merge(in_sample_dyads, target_frames, on="target_id")
+dyads_framed = pd.merge(dyads_source, dyads_target, on=["tweet_id", "target_id", "kind", "source_group", "sample"])
+dyads_framed = pd.concat([dyads_framed, dyads_target[dyads_target["kind"] == "retweet"]])
+
+# lists of frame columns
+source_frame_cols = [col for col in dyads_framed if "s_" in col]
+target_frame_cols = [col for col in dyads_framed if "t_" in col]
+
 json_list = []
 print("Beginning Loop")
-for row_i, dyad in in_sample_dyads.iterrows():
+for row_i, dyad in dyads_framed.iterrows():
     dyad_json = {}
     
     dyad_json["source_full"] = json.loads(tweet_catalog[str(dyad["tweet_id"])])
     dyad_json["target_full"] = json.loads(tweet_catalog[str(dyad["target_id"])])
-    # print(f"Attempting to match {type(str(dyad['tweet_id']))} with {type(frame_catalog['id_str'][0])}")
-    # print(f"Looks like {str(dyad['tweet_id'])} and {frame_catalog['id_str'][0]}")
-    # print(f"Found match: {np.sum((frame_catalog['id_str'] == (dyad['tweet_id']))) > 0}")
+    
+    source_frames = dyad[source_frame_cols]
+    source_frames = frame_series_to_dict(source_frames, "s_")
+    target_frames = dyad[target_frame_cols]
+    target_frames = frame_series_to_dict(target_frames, "t_")
 
-    dyad_json["source_frames"] = frame_catalog[frame_catalog["id_str"] == str(dyad["tweet_id"])].to_json(orient="records")
-    dyad_json["target_frames"] = frame_catalog[frame_catalog["id_str"] == str(dyad["target_id"])].to_json(orient="records")
+    dyad_json["source_frames"] = source_frames
+    dyad_json["target_frames"] = target_frames
 
     dyad_json["source_group"] = dyad["source_group"]
     dyad_json["target_group"] = dyad["sample"].split("_")[0]  # i stored these weird

@@ -26,18 +26,17 @@ def build_minimal_public_df(path):
     # build up a list of rows to convert to df
     rows = []
 
-    for tweets in tqdm(gzip.open(path)):
-        print(tweets)
-        break
-        for tweet in tweets:
-            new_row = {}
-            tweet_json = json.loads(tweet)
+    new_row = {}
+    tweet_list_raw = gzip.open(path).read()
+    tweet_list = json.loads(tweet_list_raw)
+    for tweet in tqdm(tweet_list):
 
-            new_row["id_str"] = str(tweet_json["id_str"])
-            new_row["user_id"] = tweet_json["user"]["id_str"]
-            new_row["user_name"] = tweet_json["user"]["screen_name"]
 
-            rows.append(new_row)
+        new_row["id_str"] = str(tweet["id_str"])
+        new_row["user_id"] = tweet["user"]["id_str"]
+        new_row["user_name"] = tweet["user"]["screen_name"]
+
+        rows.append(new_row)
 
     return pd.DataFrame(rows)
 
@@ -76,7 +75,6 @@ tweet_catalog = assemble_catalog([public_2018_df,
                                   congress_df,
                                   journalists_df])
 
-# %%
 # we want to save the data by type of edge. these objects will hold the data to save
 all_matches = []
 
@@ -115,7 +113,6 @@ def identify_successors_in_sample(focal_edges: pd.DataFrame,
     return pd.concat(match_dfs)
 
 
-# %%
 # matches on journalists edges
 group = "journalists"
 focal_edges = pd.read_csv(data_paths[group]["edges"], sep="\t")
@@ -128,7 +125,7 @@ match_sum = match_df.shape[0]
 print(f"\nJournalists: Found {match_sum} successors (one of {journo_kinds}) in-sample out of {focal_edges.shape[0]} known successors ({match_sum / focal_edges.shape[0] * 100:.2f} %)")
 
 all_matches.append(match_df)
-# %%
+
 group = "congress"
 focal_edges = pd.read_csv(data_paths[group]["edges"], sep="\t")
 congress_kinds = ["retweet_of"]
@@ -141,7 +138,7 @@ match_sum = match_df.shape[0]
 print(f"\nCongress: Found {match_sum} successors (one of {journo_kinds}) in-sample out of {focal_edges.shape[0]} known successors ({match_sum / focal_edges.shape[0] * 100:.2f} %)")
 
 all_matches.append(match_df)
-# %%
+
 group = "public"
 edges_2018 = pd.read_csv(data_paths[group]["2018_edges"], sep="\t")
 edges_2019 = pd.read_csv(data_paths[group]["2019_edges"], sep="\t")
@@ -155,8 +152,7 @@ match_sum = match_df.shape[0]
 print(f"\n{group}: Found {match_sum} successors in-sample out of {focal_edges.shape[0]} known successors ({match_sum / focal_edges.shape[0] * 100:.2f} %)")
 
 all_matches.append(match_df)
-# %%
+
 all_dyads = pd.concat(all_matches)
 
 all_dyads.to_csv("data/down_sample/edge_lists/in_sample_dyads.tsv", index=False, sep="\t")
-# %%

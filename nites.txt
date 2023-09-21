@@ -10,3 +10,13 @@ does the republican party look more like trump over time
 
 how do we look at group changes over time, are right wing journos and politicians becoming more or less similar in framing
 
+# stuff to do
+
+1. probablility that a frame is used on both half of dyads
+2. three graphs one for retweet, one for quote, one for reply, dyadic co-occurance
+3. framing effects linking production and consumption. how much predictability is left after conditioning on user's frame consumption?
+4. how do we combine the earlier work with this dyad stuff?
+5. how often are a users frames being amplified vs countered?
+6. make a big planning document to present next week. what kinds of analyses can we do/should we do etc.
+    - include everything for the whole project
+7. send availability for next week    

@@ -17,21 +17,23 @@ congress_path = "data/down_sample/immigration_tweets/congress.json"
 
 print("Extracting Public Edges 2018...")
 new_rows = []
-for t in tqdm(gzip.open(paths["public"]["2018_json"])):
+for t in gzip.open(paths["public"]["2018_json"]):
     tweet_json = json.loads(t)
-    edges = check_connections(tweet_json, "public")
-    if edges:
-        new_rows.append(edges)
+    for tweet in tqdm(tweet_json):
+        edges = check_connections(tweet, "public")
+        if edges:
+            new_rows.append(edges)
 
 pd.DataFrame(new_rows).to_csv("data/down_sample/edge_lists/public_2018_successors.tsv", sep="\t", index=False)
 
 print("Extracting Public Edges 2019...")
 new_rows = []
-for t in tqdm(gzip.open(paths["public"]["2019_json"])):
+for t in gzip.open(paths["public"]["2019_json"]):
     tweet_json = json.loads(t)
-    edges = check_connections(tweet_json, "public")
-    if edges:
-        new_rows.append(edges)
+    for tweet in tqdm(tweet_json):
+        edges = check_connections(tweet, "public")
+        if edges:
+            new_rows.append(edges)
 
 pd.DataFrame(new_rows).to_csv("data/down_sample/edge_lists/public_2019_successors.tsv", sep="\t", index=False)
 

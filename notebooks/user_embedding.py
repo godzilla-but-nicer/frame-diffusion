@@ -15,7 +15,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # %%
-groups = ["congress", "journalists", "trump"]
+groups = ["congress", "journalists", "trump", "public"]
 frame_types = ["generic", "specific"]
 all_frame_dfs = []
 
@@ -70,6 +70,45 @@ for group in tqdm(groups):
     all_frames = pd.concat(all_frame_dfs)
 
 # %%
+# subsample the public
+public_sample_fraction = 0.2
+required_observations = 3
+sampled_public = all_frames[all_frames["group"] == "public"].sample(frac=public_sample_fraction)
+filtered_public = sampled_public.groupby("screen_name").filter(lambda x: len(x) > required_observations)
+filtered_public = filtered_public.drop(["Hero", "Threat", "Victim"], axis="columns")
+
+# drop the public from the all frames df and add back the sample
+sampled_frames = all_frames[all_frames["group"] != "public"]
+sampled_frames = pd.concat((sampled_frames, filtered_public)).dropna(axis="columns", how="any")
+
+# %%
+complete_frame_cols = ['Capacity and Resources',
+       'Crime and Punishment', 'Cultural Identity', 'Economic',
+       'External Regulation and Reputation', 'Fairness and Equality',
+       'Health and Safety', 'Legality, Constitutionality, Jurisdiction',
+       'Morality and Ethics', 'Policy Prescription and Evaluation',
+       'Political Factors and Implications', 'Public Sentiment',
+       'Quality of Life', 'Security and Defense', 'Hero: Cultural Diversity', 'Hero: Integration', 'Hero: Worker',
+       'Threat: Fiscal', 'Threat: Jobs', 'Threat: National Cohesion',
+       'Threat: Public Order', 'Victim: Discrimination',
+       'Victim: Global Economy', 'Victim: Humanitarian', 'Victim: War']
+
+thin_frames = sampled_frames.drop(["id_str", "time_stamp"], axis="columns")
+frame_means = thin_frames.groupby(["screen_name", "group"]).mean().reset_index()
+
+# %%
+from sklearn.decomposition import PCA
+from umap import UMAP
+
+pca = UMAP()
+
+X_pca = pca.fit_transform(frame_means[complete_frame_cols].values)
+
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.2)
+
+
+# %%
 from sklearn.decomposition import PCA
 import scipy.linalg as sla
 
@@ -100,6 +139,7 @@ def frame_spread(df: pd.DataFrame) -> float:
 
     return np.sqrt(np.abs(sla.det(frame_cov)))
     
+# %%
 
 # %%
 import warnings
