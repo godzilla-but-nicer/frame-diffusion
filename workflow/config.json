@@ -1,7 +1,9 @@
 {
     "dates": {
         "start": "01-01-2018 00:00:00",
-        "end": "12-31-2019 23:59:59"
+        "end": "12-31-2019 23:59:59",
+        "v1-format": "%a %b %d %H:%M:%S +0000 %Y",
+        "v2-format": ""
     },
     "regex_query": "immigration|immigrants?|illegals|undocumented|illegal aliens?|migrants?|migration",
     "frames": {

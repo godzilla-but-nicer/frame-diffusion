@@ -11,6 +11,43 @@ configfile: "workflow/config.json"
 
 journalists = pd.read_csv("data/user_info/top_536_journos.tsv", sep="\t")["username"]
 
+
+# the following rule gets all of the tweet data into the files we use for 
+# classification and analysis it downloads the publically available 
+# data and expects to find our data in particular places.
+# Specifically these are:
+#
+#   - data/down_sample/edge_lists
+#   - data/trump_twitter_archive.json
+#   - data/immigration_tweets/US_2018.gz
+#   - data/immigration_tweets/US_2019.gz
+#   - data/decahose_retweets/*.gz   (tons of files)
+#   - data/non_immigration_tweets/congress.json (gathered from a script but which one?)
+#
+# This rule should invoke the following rules:
+#
+#   - download_congress_tweets
+#   - download_journalist_tweets
+#   - filter_trump_immigration
+#   - build_congress_table
+#   - build_congress_nonimmigration_table
+#   - build_trump_table
+#   - build_journalist_table
+#   - build_retweet_table
+#   - collect_retweet_json
+rule download_and_parse_tweets:
+    input:
+        "data/immigration_tweets/congress.json",
+        expand("data/immigration_tweets/journalists/{journalist}.json", journalist=journalists),
+        "data/immigration_tweets/trump.json",
+        "data/immigration_tweets/public_sample.tsv",
+        "data/non_immigration_tweets/congress.tsv",
+        "data/immigration_tweets/trump.tsv",
+        "data/immigration_tweets/journalists.tsv",
+        "data/decahose_retweets/{year}_retweets.tsv",
+        "data/decahose_retweets/{year}_retweets.gz"
+
+
 # 1. Download/extract the immigration tweet json data
 # no api request
 rule download_congress_tweets:
@@ -43,7 +80,7 @@ rule filter_trump_immigration:
         "scripts/filter_trump_immigration_tweets.py"
 
 
-
+# Unused?
 rule get_us_tweet_ids_times:
     input:
         "data/immigration_tweets/US_2018.gz",
@@ -68,6 +105,7 @@ rule get_us_tweet_ids_times:
 
 
 # 2. convert the json to tsv for each main category we're introducing
+# unused?
 rule build_public_sample_table:
     input:
         "data/immigration_tweets/US.gz",
@@ -210,6 +248,34 @@ rule collect_retweet_json:
             json.dump(json_entries, gz_fout)
 
 
+# The following rule gathers all of the classification rules into one
+# It must be run after lots of things are in the right place which is
+# possible after running the previous rules or the download_and_parse_tweets 
+# collected rule.
+# 
+# Running this rule will invoke the following rules:
+#
+#   - classify_congress_tweets
+#   - classify_trump_tweets
+#   - classify_journalist_tweets
+#   - classify_retweets
+#   - combine_all_frames
+rule classify_all_tweets:
+    input:
+        "data/binary_frames/congress/congress_generic.tsv",
+        "data/binary_frames/congress/congress_specific.tsv",
+        "data/binary_frames/congress/congress_narrative.tsv",
+        "data/binary_frames/trump/trump_generic.tsv",
+        "data/binary_frames/trump/trump_specific.tsv",
+        "data/binary_frames/trump/trump_narrative.tsv",
+        "data/binary_frames/journalists/journalists_generic.tsv",
+        "data/binary_frames/journalists/journalists_specific.tsv",
+        "data/binary_frames/journalists/journalists_narrative.tsv",
+        "data/binary_frames/retweets/retweets_generic.tsv",
+        "data/binary_frames/retweets/retweets_specific.tsv",
+        "data/binary_frames/retweets/retweets_narrative.tsv",
+        "data/binary_frames/all_group_frames.tsv"
+
 # 3. Use classifier to identify frames in our tweet data
 rule classify_congress_tweets:
     input:
@@ -257,13 +323,16 @@ rule classify_retweets:
 rule combine_all_frames:
     input:
         expand("data/binary_frames/{group}/{group}_{frame_type}.tsv",
-               group=["journalists", "trump", "retweets"],
+               group=["journalists", "congress", "trump", "retweets"],
                frame_type=["generic", "specific", "narrative"])
     output:
         "data/binary_frames/all_group_frames.tsv"
 
     shell:
         "python scripts/scripts/build_all_frame_df.py"
+
+# Rules for all of the nondyad analysis
+rule 
 
 rule identify_successors:
     input:

@@ -296,6 +296,10 @@ def parse_tweet_json_v1(tweet_json: dict) -> dict:
     new_row["time_stamp"] = time_stamp
     new_row["screen_name"] = tweet_json["user"]["screen_name"]
 
+    # user info
+    new_row["user_followers"] = tweet_json["user"]["followers_count"]
+    new_row["user_posts"] = tweet_json["user"]["statuses_count"]
+
     new_row["text"] = get_tweet_text(tweet_json)
 
     # metrics. every tweet should also have these
@@ -324,6 +328,10 @@ def parse_retweet_json_v1(tweet_json: dict) -> dict:
     new_row["time_stamp"] = time_stamp
     new_row["screen_name"] = tweet_json["user"]["screen_name"]
 
+    # user info
+    new_row["user_followers"] = tweet_json["user"]["followers_count"]
+    new_row["user_posts"] = tweet_json["user"]["statuses_count"]
+    
     new_row["text"] = get_retweet_text(tweet_json)
 
     # metrics. every tweet should also have these

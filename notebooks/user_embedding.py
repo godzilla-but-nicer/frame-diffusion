@@ -94,19 +94,42 @@ complete_frame_cols = ['Capacity and Resources',
        'Victim: Global Economy', 'Victim: Humanitarian', 'Victim: War']
 
 thin_frames = sampled_frames.drop(["id_str", "time_stamp"], axis="columns")
-frame_means = thin_frames.groupby(["screen_name", "group"]).mean().reset_index()
+frame_means = thin_frames.groupby(["screen_name", "group"]).mean().reset_index().dropna()
 
 # %%
 from sklearn.decomposition import PCA
 from umap import UMAP
 
-pca = UMAP()
+pca = PCA(n_components=2)
 
 X_pca = pca.fit_transform(frame_means[complete_frame_cols].values)
 
-fig, ax = plt.subplots(figsize=(10, 10))
-ax.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.2)
+non_congress = X_pca[frame_means["group"] != "congress"]
+congress = X_pca[frame_means["group"] == "congress"]
 
+
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.scatter(non_congress[:, 0], non_congress[:, 1], alpha=0.05)
+for i, pt in enumerate(congress):
+    if info_frames.iloc[i]["party"] == "D":
+        ax.scatter(pt[0], pt[1], c="blue", marker="x", label="Democrat")
+    elif info_frames.iloc[i]["party"] == "R":
+        ax.scatter(pt[0], pt[1], c="red", marker="x", label="Republican")
+    else:
+        ax.scatter(pt[0], pt[1], c="green", marker="x", label="Independent/Nonpartisan")
+
+pca.explained_variance_ratio_[0]
+
+ax.set_xlabel(f"PC 1 ({pca.explained_variance_ratio_[0] * 100:.2f}%)")
+ax.set_ylabel(f"PC 2 ({pca.explained_variance_ratio_[1] * 100:.2f}%)")
+fig.savefig("plots/structure/frame-umap.png")
+
+
+# %%
+congress_info = pd.read_csv("data/user_info/congress_info.tsv", sep="\t")[["screen_name", "party"]]
+
+info_frames = pd.merge(frame_means, congress_info, on="screen_name", how="left")
+info_frames = info_frames[info_frames["group"] == "congress"]
 
 # %%
 from sklearn.decomposition import PCA

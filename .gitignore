@@ -8,10 +8,16 @@
 # config etc
 !workflow/*.json
 workflow/twitter_api_keys.json
+scratch_directory_path.txt
+updates.md
 
 # directories with big files
 papers/
 plots/
+
+# random figures
+*.pdf
+*.png
 
 # snakemake
 .snakemake/
