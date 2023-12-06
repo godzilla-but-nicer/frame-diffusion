@@ -19,7 +19,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/sample_paths.json", "r") as pf:
+with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
 # connect screen names and user ids. needed to work with mention network
@@ -106,4 +106,4 @@ for i, tweet in tqdm(filtered_tweets.iterrows()):
 
 
 features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="id_str")
-features_df.to_csv(paths["regression"]["features"], sep="\t", index=False)
+features_df.to_csv(paths["regressions"]["features"], sep="\t", index=False)
