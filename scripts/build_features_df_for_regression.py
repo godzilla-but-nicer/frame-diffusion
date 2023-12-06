@@ -37,8 +37,9 @@ with open(paths["tweet_catalog"], "r") as catalog_raw:
 
 # load all of the frames and tweet time stamps etc.
 f = pd.read_csv(paths["all_frames"], sep="\t")
+print(f)
 filtered_tweets = fs.filter_users_by_activity(f, 10)
-
+exit(1)
 # FOR TESTING
 filtered_tweets = filtered_tweets.sample(frac=1)
 
