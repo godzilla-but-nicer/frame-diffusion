@@ -56,7 +56,7 @@ f = pd.read_csv("data/down_sample/binary_frames/all_frames.tsv", sep="\t")
 filtered_tweets = fs.filter_users_by_activity(f, 10)
 
 # FOR TESTING
-filtered_tweets = filtered_tweets.sample(frac=0.05)
+filtered_tweets = filtered_tweets.sample(frac=0.2)
 
 # list of all frame names
 all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + config["frames"]["narrative"]
@@ -113,7 +113,7 @@ for i, tweet in tqdm(filtered_tweets.iterrows()):
     tweet_features = {}
 
     # convert user screen name to user id number
-    if tweet["screen_name"] in user_id_map["screen_name"]:
+    if tweet["screen_name"] in user_id_map["screen_name"].values:
 
         lookup = get_unique_mentions(tweet["screen_name"], mentions, user_id_map)
 

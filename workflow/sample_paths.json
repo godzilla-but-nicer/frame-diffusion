@@ -1,4 +1,5 @@
 {
+    "dataset": "sample",
     "tweet_catalog": "data/down_sample/immigration_tweets/tweets_by_id.json",
     "all_frames": "data/down_sample/binary_frames/all_frames.tsv",
     "congress": {
@@ -41,6 +42,7 @@
         "2019_edges": "data/down_sample/edge_lists/public_2019_successors.tsv",
         "retweet_dir": "data/down_sample/decahose_retweets/",
         "metadata": "data/user_info/full_datasheet.tsv",
+        "user_id_map": "data/user_info/user_id_map.tsv",
         "frames": {
             "all": "data/down_sample/binary_frames/predicted_frames.tsv"
         }

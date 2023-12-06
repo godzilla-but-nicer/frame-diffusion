@@ -1,4 +1,7 @@
 {
+    "dataset": "full",
+    "tweet_catalog": "data/immigration_tweets/tweets_by_id.json",
+    "all_frames": "data/binary_frames/all_group_frames.tsv",
     "congress": {
         "metadata": "data/user_info/congress_info.tsv",
         "full_tweets": "data/immigration_tweets/congress.tsv",
@@ -22,11 +25,34 @@
             "narrative": "data/binary_frames/journalists/journalists_narrative.tsv"
         }
     },
+    "trump": {
+        "full_tweets": "data/immigration_tweets/trump.tsv",
+        "tweet_json": "data/immigration_tweets/trump.json",
+        "edges": "data/edge_lists/trump_successors.tsv",
+        "frames": {
+            "specific": "data/binary_frames/trump/trump_specific.tsv",
+            "generic": "data/binary_frames/trump/trump_generic.tsv",
+            "narrative": "data/binary_frames/trump/trump_narrative.tsv"
+        }
+    },
     "public": {
         "2018_json": "data/immigration_tweets/US_2018.gz",
         "2019_json": "data/immigration_tweets/US_2019.gz",
         "2018_edges": "data/edge_lists/public_2018_successors.tsv",
         "2019_edges": "data/edge_lists/public_2019_successors.tsv",
-        "retweet_dir": "data/decahose_retweets/"
+        "retweet_dir": "data/decahose_retweets/",
+        "metadata": "data/user_info/full_datasheet.tsv",
+        "user_id_map": "data/user_info/user_id_map.tsv",
+        "frames": {
+            "all": "data/binary_frames/predicted_frames.tsv"
+        }
+    },
+    "mentions": {
+        "id_map": "data/user_id_map.tsv",
+        "network": "data/edge_lists/in_sample_mentions.tsv",
+        "raw_network": "data/edge_lists/mention-network.2012-2020_04_09.tsv"
+    },
+    "regressions": {
+        "features": "data/down_sample/regression/features.tsv"
     }
 }

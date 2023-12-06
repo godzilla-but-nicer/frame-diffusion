@@ -89,7 +89,7 @@ for i, tweet in tqdm(filtered_tweets.iterrows()):
     tweet_features = {}
 
     # convert user screen name to user id number
-    if tweet["screen_name"] in user_id_map["screen_name"]:
+    if tweet["screen_name"] in user_id_map["screen_name"].values:
 
         lookup = get_unique_mentions(tweet["screen_name"], mentions, user_id_map)
 
