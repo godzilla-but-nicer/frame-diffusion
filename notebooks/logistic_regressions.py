@@ -56,81 +56,14 @@ f = pd.read_csv("data/down_sample/binary_frames/all_frames.tsv", sep="\t")
 filtered_tweets = fs.filter_users_by_activity(f, 10)
 
 # FOR TESTING
-filtered_tweets = filtered_tweets.sample(frac=0.2)
+filtered_tweets = filtered_tweets.sample(frac=1)
 
 # list of all frame names
 all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + config["frames"]["narrative"]
 
-# public tweet metadata like ideology scores, engagement, etc.
-meta = pd.read_csv("data/user_info/full_datasheet.tsv", sep="\t").drop(all_frame_list + ["Unnamed: 0", "Hero", "Threat", "Victim"], axis="columns")
-meta_subset = pd.merge(filtered_tweets[["id_str"]], meta, how="left", on="id_str")
-meta_subset["id_str"] = meta_subset["id_str"].astype(str)
-# %% [markdown]
-# ## Information from mention network
-#
-# We want to use degree in the mention network as a feature in our regressions.
-# We're also going to need a list of neighbors for each user to get the
-# alter time series.
-# %%
-# creating a features dataframe for each tweet
-# I think with the full datasheet I can actually just skip all of this
-# user_id_map_dict = {x["screen_name"].lower(): x["user_id"] for _, x in user_id_map.iterrows()}
-# user_ids = filtered_tweets["screen_name"].map(user_id_map_dict)
-
-def get_unique_mentions(user: str,
-                        mentions: pd.DataFrame,
-                        user_id_map: pd.DataFrame) -> Optional[Tuple[int, List[str]]]:
-    user_id = ts.get_user_id(user, user_id_map)
-
-    # if we have the user in our map we continue doing stuff
-    if user_id:
-        user_mentions = mentions[(mentions["uid1"] == user_id) | (mentions["uid2"] == user_id)]
-        unique_mentions = user_mentions.shape[0]
-
-        neighbor_ids = np.hstack((user_mentions["uid1"].values,
-                                 user_mentions["uid2"].values))
-        
-        neighbors = []
-        for id in neighbor_ids:
-
-            # skip the self in making this list
-            if id != user_id:
-                name = ts.get_screen_name(id, user_id_map)
-
-                # again we might not have the user in our map
-                if name:
-                    neighbors.append(name)
-
-        return (unique_mentions, neighbors)
-
-    else:
-         return None
-
-
-feature_rows = []
-mention_neighbors = {}
-for i, tweet in tqdm(filtered_tweets.iterrows()):
-    tweet_features = {}
-
-    # convert user screen name to user id number
-    if tweet["screen_name"] in user_id_map["screen_name"].values:
-
-        lookup = get_unique_mentions(tweet["screen_name"], mentions, user_id_map)
-
-        if lookup:
-            unique_mentions, neighbors = lookup
-            tweet_features["log_unique_mentions"] = np.log(unique_mentions + 1)
-
-            # add the tweet id to the row in case we need to merge later
-            tweet_features["id_str"] = str(tweet["id_str"])
-            feature_rows.append(tweet_features)
-
-            # add the network neighbors to a dictionary for later ;)
-            mention_neighbors[tweet["screen_name"]] = neighbors
-
-
-features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="id_str")
-
+# load the features dataset
+features = pd.read_csv(paths["regression"]["features"], sep="\t")
+features["id_str"] = features["id_str"].astype(str)
 # %% [markdown]
 # Ok now we need to built the treatment pairs, Basically for each tweet we look
 # for frames in the previous day. This is the sort of self exposure treatment.
@@ -138,7 +71,7 @@ features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="
 # %%
 all_frame_pairs = []
 
-for user in filtered_tweets["screen_name"].unique():
+for user in tqdm(filtered_tweets["screen_name"].unique()):
     user_pairs = ci.construct_tweet_self_influence_pairs(user,
                                                          filtered_tweets,
                                                          "1D",
@@ -171,7 +104,7 @@ def build_regression_dfs(frame_list: List[str],
 
     return regression_dfs
 
-regression_dfs = build_regression_dfs(all_frame_list, all_frame_pairs, features_df)
+regression_dfs = build_regression_dfs(all_frame_list, all_frame_pairs, features)
 # %%
 endog_col = "cue"
 exog_cols = ["exposure", 
@@ -194,7 +127,7 @@ for frame in tqdm(all_frame_list):
         print(f"no results for frame: {frame}")
         continue
 
-    with open("data/down_sample/regression_output/self_influence.txt", "a") as f:
+    with open(paths["regression"]["self_output"], "a") as f:
         f.write("\n\n\n")
         f.write(f"{frame} -----------------")
         f.write("\n")

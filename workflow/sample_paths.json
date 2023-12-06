@@ -49,9 +49,11 @@
     },
     "mentions": {
         "id_map": "data/down_sample/user_id_map.tsv",
-        "network": "data/down_sample/edge_lists/in_sample_mentions.tsv"
+        "network": "data/down_sample/edge_lists/in_sample_mentions.tsv",
+        "neighbors": "data/down_sample/edge_lists/mention_neighbors.json"
     },
-    "regressions": {
-        "features": "data/down_sample/regression/features.tsv"
+    "regression": {
+        "features": "data/down_sample/regression/features.tsv",
+        "self_output": "data/down_sample/regression/self_output.txt"
     }
 }
