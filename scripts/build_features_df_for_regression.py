@@ -23,7 +23,7 @@ with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
 # connect screen names and user ids. needed to work with mention network
-user_id_map = pd.read_csv(paths["mentions"]["id_map"], sep="\t",
+user_id_map = pd.read_csv(paths["public"]["id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
 
 # the mention network itself
