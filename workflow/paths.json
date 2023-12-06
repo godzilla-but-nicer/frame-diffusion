@@ -53,6 +53,6 @@
         "raw_network": "data/edge_lists/mention-network.2012-2020_04_09.tsv"
     },
     "regressions": {
-        "features": "data/down_sample/regression/features.tsv"
+        "features": "data/regression/features.tsv"
     }
 }
