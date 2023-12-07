@@ -18,16 +18,16 @@ print(f"Working in {os.getcwd()}")
 with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
-with open("workflow/sample_paths.json", "r") as pf:
+with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
 # %%
 # the first time we run this let's just save all the frames
-# f = fs.load_all_frames(paths, config)
-# f.to_csv("data/down_sample/binary_frames/all_frames.tsv", sep="\t", index=False)
+f = fs.load_all_frames(paths, config)
+f.to_csv(paths["all_frames"], sep="\t", index=False)
 
 # then we can load them instead of building the df
-f = pd.read_csv("data/down_sample/binary_frames/all_frames.tsv", sep="\t")
+# f = pd.read_csv("data/down_sample/binary_frames/all_frames.tsv", sep="\t")
 # %%
 filtered_tweets = fs.filter_users_by_activity(f, 10)
 # %%

@@ -22,6 +22,13 @@ with open("workflow/config.json", "r") as cf:
 with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
+# load all of the frames and tweet time stamps etc.
+f = pd.read_csv(paths["all_frames"], sep="\t")
+filtered_tweets = fs.filter_users_by_activity(f, 10)
+
+# FOR TESTING
+filtered_tweets = filtered_tweets.sample(frac=1)
+
 # connect screen names and user ids. needed to work with mention network
 user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
@@ -35,13 +42,6 @@ mentions = pd.read_csv(paths["mentions"]["network"], sep="\t",
 with open(paths["tweet_catalog"], "r") as catalog_raw:
     catalog = json.loads(catalog_raw.read())
 
-# load all of the frames and tweet time stamps etc.
-f = pd.read_csv(paths["all_frames"], sep="\t")
-print(f)
-filtered_tweets = fs.filter_users_by_activity(f, 10)
-exit(1)
-# FOR TESTING
-filtered_tweets = filtered_tweets.sample(frac=1)
 
 # list of all frame names
 all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + config["frames"]["narrative"]

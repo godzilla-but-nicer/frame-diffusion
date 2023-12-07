@@ -1,7 +1,8 @@
 {
     "dataset": "full",
     "tweet_catalog": "data/immigration_tweets/tweets_by_id.json",
-    "all_frames": "data/binary_frames/all_group_frames.tsv",
+    "all_frames": "data/binary_frames/all_frames.tsv",
+    "comment_on_all_frames": "this is generated in individual_user_eda notebook",
     "congress": {
         "metadata": "data/user_info/congress_info.tsv",
         "full_tweets": "data/immigration_tweets/congress.tsv",
