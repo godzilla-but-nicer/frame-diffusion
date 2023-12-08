@@ -107,7 +107,7 @@ for i, tweet in tqdm(filtered_tweets.iterrows()):
 
 
 features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="id_str")
-features_df.to_csv(paths["regressions"]["features"], sep="\t", index=False)
+features_df.to_csv(paths["regression"]["features"], sep="\t", index=False)
 
 with open(paths["mentions"]["neighbors"], "w") as neighbors_out:
     json.dump(mention_neighbors, neighbors_out)

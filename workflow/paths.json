@@ -54,7 +54,7 @@
         "raw_network": "data/edge_lists/mention-network.2012-2020_04_09.tsv",
         "neighbors": "data/edge_lists/mention_neighbots.json"
     },
-    "regressions": {
+    "regression": {
         "features": "data/regression/features.tsv"
     }
 }
