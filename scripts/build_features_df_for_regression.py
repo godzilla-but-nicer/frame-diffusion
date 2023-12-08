@@ -19,7 +19,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
 # load all of the frames and tweet time stamps etc.
@@ -38,9 +38,11 @@ mentions = pd.read_csv(paths["mentions"]["network"], sep="\t",
                        dtype={"uid1": str, "uid2": str,
                               "1to2freq": int, "2to1freq": int})
 
+# convert the mention network to 
+
 # load the tweet json so we can grab additional details
-with open(paths["tweet_catalog"], "r") as catalog_raw:
-    catalog = json.loads(catalog_raw.read())
+# with open(paths["tweet_catalog"], "r") as catalog_raw:
+#     catalog = json.loads(catalog_raw.read())
 
 
 # list of all frame names
@@ -67,16 +69,17 @@ def get_unique_mentions(user: str,
         neighbor_ids = np.hstack((user_mentions["uid1"].values,
                                  user_mentions["uid2"].values))
         
+        neighbor_ids = neighbor_ids[neighbor_ids != user_id]
+        
         neighbors = []
         for id in neighbor_ids:
 
             # skip the self in making this list
-            if id != user_id:
-                name = ts.get_screen_name(id, user_id_map)
+            name = ts.get_screen_name(id, user_id_map)
 
-                # again we might not have the user in our map
-                if name:
-                    neighbors.append(name)
+            # again we might not have the user in our map
+            if name:
+                neighbors.append(name)
 
         return (unique_mentions, neighbors)
 
@@ -86,27 +89,25 @@ def get_unique_mentions(user: str,
 
 feature_rows = []
 mention_neighbors = {}
-for i, tweet in tqdm(filtered_tweets.iterrows()):
-    tweet_features = {}
+for user in tqdm(filtered_tweets["screen_name"]):
+    user_features = {}
 
     # convert user screen name to user id number
-    if tweet["screen_name"] in user_id_map["screen_name"].values:
+    lookup = get_unique_mentions(user, mentions, user_id_map)
 
-        lookup = get_unique_mentions(tweet["screen_name"], mentions, user_id_map)
+    if lookup:
+        unique_mentions, neighbors = lookup
+        user_features["log_unique_mentions"] = np.log(unique_mentions + 1)
 
-        if lookup:
-            unique_mentions, neighbors = lookup
-            tweet_features["log_unique_mentions"] = np.log(unique_mentions + 1)
+        # add the tweet id to the row in case we need to merge later
+        user_features["screen_name"] = user
+        feature_rows.append(user_features)
 
-            # add the tweet id to the row in case we need to merge later
-            tweet_features["id_str"] = str(tweet["id_str"])
-            feature_rows.append(tweet_features)
-
-            # add the network neighbors to a dictionary for later ;)
-            mention_neighbors[tweet["screen_name"]] = neighbors
+        # add the network neighbors to a dictionary for later ;)
+        mention_neighbors[user] = neighbors
 
 
-features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="id_str")
+features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="screen_name")
 features_df.to_csv(paths["regression"]["features"], sep="\t", index=False)
 
 with open(paths["mentions"]["neighbors"], "w") as neighbors_out:
