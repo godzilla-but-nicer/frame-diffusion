@@ -50,6 +50,7 @@
     "mentions": {
         "id_map": "data/down_sample/user_id_map.tsv",
         "network": "data/down_sample/edge_lists/in_sample_mentions.tsv",
+        "adjacency_list": "data/down_sample/edge_lists/mention_neighbors.json",
         "neighbors": "data/down_sample/edge_lists/mention_neighbors.json"
     },
     "regression": {
