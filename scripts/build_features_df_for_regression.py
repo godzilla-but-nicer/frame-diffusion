@@ -18,7 +18,6 @@ import frame_stats.causal_inferrence as ci  # has the functions for setting up r
 with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
-# paths to data files ( need to fix this)
 with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
@@ -33,6 +32,7 @@ filtered_tweets = filtered_tweets.sample(frac=1)
 user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
 
+# to speed up our lookups in the loop later
 print("building name to id mappers")
 name_to_id = {row["screen_name"]: row["user_id"] for _, row in user_id_map.iterrows()}
 id_to_name = {row["user_id"]: row["screen_name"] for _, row in user_id_map.iterrows()}
@@ -43,7 +43,7 @@ mentions = pd.read_csv(paths["mentions"]["network"], sep="\t",
                        dtype={"uid1": str, "uid2": str,
                               "1to2freq": int, "2to1freq": int})
 
-# make long
+# make long to make building dict easier
 print("making mentions longer")
 top_half = mentions[["uid1", "uid2"]].rename({"uid1": "source",
                                                   "uid2": "target"},
@@ -54,6 +54,7 @@ bottom_half = mentions[["uid2", "uid1"]].rename({"uid2": "source",
 mentions = pd.concat((top_half, bottom_half)).drop_duplicates()
 print("mentions complete")
 
+# the key to speeding up the loop below
 print("building mention neighbor dict\n")
 neighbors = {}
 neighbors_df = mentions.groupby("source")["target"].unique().reset_index()
@@ -64,7 +65,6 @@ for _, row in tqdm(neighbors_df.iterrows()):
 with open(paths["mentions"]["adjacency_list"], "w") as fout:
     json.dump(neighbors, fout)
 print("mention neighbor dict complete")
-
 
 # list of all frame names
 all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + config["frames"]["narrative"]

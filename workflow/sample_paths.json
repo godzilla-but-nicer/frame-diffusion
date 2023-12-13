@@ -55,6 +55,7 @@
     },
     "regression": {
         "features": "data/down_sample/regression/features.tsv",
-        "self_output": "data/down_sample/regression/self_output.txt"
+        "self_output": "data/down_sample/regression/self_output/",
+        "alter_output": "data/down_sample/regression/alter_output/"
     }
 }

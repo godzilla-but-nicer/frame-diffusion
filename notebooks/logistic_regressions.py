@@ -64,6 +64,11 @@ all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + co
 # load the features dataset
 features = pd.read_csv(paths["regression"]["features"], sep="\t")
 features["id_str"] = features["id_str"].astype(str)
+features = features.drop_duplicates()
+
+# adjacency list for neighbor lookup
+with open(paths["mentions"]["adjacency_list"], "r") as fout:
+    mention_neighbors = json.loads(fout.read())
 # %% [markdown]
 # Ok now we need to built the treatment pairs, Basically for each tweet we look
 # for frames in the previous day. This is the sort of self exposure treatment.
@@ -82,29 +87,28 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 # %%
-def build_regression_dfs(frame_list: List[str],
-                         frame_pairs: List[Dict],
-                         features: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-    regression_dfs = {}
-    for frame in tqdm(frame_list):
-        rows = []
-        for pair in frame_pairs:
-            exposure = pair["t"][frame]
-            cue = pair["t+1"][frame]
-            id = pair["t+1"]["id_str"]
+regression_dfs = {}
+for frame in tqdm(all_frame_list):
 
-            row = {}
-            row["cue"] = cue
-            row["id_str"] = str(id)
-            row["exposure"] = exposure
+    rows = []
 
-            rows.append(row)
+    for pair in all_frame_pairs:
+        exposure = pair["t"][frame]
+        cue = pair["t+1"][frame]
+        id = pair["t+1"]["id_str"]
 
-        regression_dfs[frame] = pd.merge(pd.DataFrame(rows), features, on="id_str").dropna()
+        row = {}
+        row["cue"] = cue
+        row["id_str"] = str(id)
+        row["exposure"] = exposure
 
-    return regression_dfs
+        rows.append(row)
 
-regression_dfs = build_regression_dfs(all_frame_list, all_frame_pairs, features)
+    pairs_df = pd.DataFrame(rows)
+
+    regression_dfs[frame] = pd.merge(pairs_df, features, on="id_str", how="left")
+
+
 # %%
 endog_col = "cue"
 exog_cols = ["exposure", 
@@ -112,12 +116,13 @@ exog_cols = ["exposure",
               "log_chars", "log_favorites", "log_retweets",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
-with open("data/down_sample/regression_output/self_influence.txt", "w") as f:
-    pass
 
 for frame in tqdm(all_frame_list):
-    response = regression_dfs[frame][endog_col]
-    predictors = sm.add_constant(regression_dfs[frame][exog_cols])
+
+    clean_frame_df = regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
+
+    response = clean_frame_df[endog_col]
+    predictors = sm.add_constant(clean_frame_df[exog_cols])
 
     model = sm.Logit(endog=response, exog=predictors)
 
@@ -125,13 +130,17 @@ for frame in tqdm(all_frame_list):
         result = model.fit()
     except:
         print(f"no results for frame: {frame}")
+        result = None
         continue
 
-    with open(paths["regression"]["self_output"], "a") as f:
-        f.write("\n\n\n")
-        f.write(f"{frame} -----------------")
-        f.write("\n")
-        f.write(result.summary().as_text())
+    header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
+    with open(paths["regression"]["self_output"] + header_suffix, "w") as f_head:
+        f_head.write(result.summary().tables[0].as_csv())
+
+    params_suffix = f"{frame.lower().replace(' ', '_')}_table.csv"
+    with open(paths["regression"]["self_output"] + params_suffix, "w") as f_body:
+        f_body.write(result.summary().tables[1].as_csv())
+
 # %% [markdown]
 #
 # Now we have to do the alter influence regressions. The functions should be
@@ -168,7 +177,7 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 # %%
-regression_dfs = build_regression_dfs(all_frame_list, all_frame_pairs, features_df)
+regression_dfs = build_regression_dfs(all_frame_list, all_frame_pairs, features)
 
 endog_col = "cue"
 exog_cols = ["exposure", 
@@ -176,8 +185,6 @@ exog_cols = ["exposure",
               "log_chars", "log_favorites", "log_retweets",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
-with open("data/down_sample/regression_output/alter_influence.txt", "w") as f:
-    pass
 
 for frame in tqdm(all_frame_list):
     response = regression_dfs[frame][endog_col]
@@ -191,10 +198,10 @@ for frame in tqdm(all_frame_list):
         print(f"no results for frame: {frame}")
         continue
 
-    with open("data/down_sample/regression_output/alter_influence.txt", "a") as f:
-        f.write("\n\n\n")
-        f.write(f"{frame} -----------------")
-        f.write("\n")
-        f.write(result.summary().as_text())
+    header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
+    with open(paths["regression"]["alter_output"] + header_suffix, "w") as f_head:
+        f_head.write(result.summary().tables[0].as_csv())
 
-# %%
+    params_suffix = f"{frame.lower().replace(' ', '_')}_table.csv"
+    with open(paths["regression"]["alter_output"] + params_suffix, "w") as f_body:
+        f_body.write(result.summary().tables[1].as_csv())

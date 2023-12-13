@@ -56,6 +56,8 @@
         "neighbors": "data/edge_lists/mention_neighbots.json"
     },
     "regression": {
-        "features": "data/regression/features.tsv"
+        "features": "data/regression/features.tsv",
+        "self_output": "data/regression/self_output/",
+        "alter_output": "data/regression/alter_output/"
     }
 }
