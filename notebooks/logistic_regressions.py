@@ -46,19 +46,6 @@ user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
 print("id map loaded")
 
-# the mention network itself
-print("loading mentions")
-mentions = pd.read_csv(paths["mentions"]["network"], sep="\t",
-                       dtype={"uid1": str, "uid2": str,
-                              "1to2freq": int, "2to1freq": int})
-print("mentions loaded")
-
-# load the tweet json so we can grab additional details
-print("loading tweet json")
-with open(paths["tweet_catalog"], "r") as catalog_raw:
-    catalog = json.loads(catalog_raw.read())
-print("tweet json loaded")
-
 
 # load all of the frames and tweet time stamps etc.
 print("loading tweets")
