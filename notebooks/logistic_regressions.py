@@ -23,6 +23,7 @@ from datetime import timedelta
 import frame_stats as fs
 import frame_stats.time_series as ts
 import frame_stats.causal_inferrence as ci  # has the functions for setting up regression
+import pickle
 
 # we dont want to be working in notebooks/ for pathing reasons
 import os
@@ -92,8 +93,8 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 
-with open("self-influence-backup-pairs.json", "w") as fout:
-    json.dump(all_frame_pairs, fout)
+with open("self-influence-backup-pairs.pkl", "w") as fout:
+    pickle.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
 regression_dfs = {}
@@ -187,8 +188,8 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
             all_frame_pairs.extend(frame_pairs)
 
 all_frame_pairs
-with open("alter-influence-backup-pairs.json", "w") as fout:
-    json.dump(all_frame_pairs, fout)
+with open("alter-influence-backup-pairs.pkl", "w") as fout:
+    pickle.dump(all_frame_pairs, fout)
 # %%
 print("building alter-influence dfs")
 regression_dfs = {}
