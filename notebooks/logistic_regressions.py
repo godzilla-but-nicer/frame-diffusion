@@ -79,15 +79,21 @@ print("adjacency list loaded")
 all_frame_pairs = []
 print("gathering self-influence pairs \n\n")
 for user in tqdm(filtered_tweets["screen_name"].unique()):
-    user_pairs = ci.construct_tweet_self_influence_pairs(user,
-                                                         filtered_tweets,
-                                                         "1D",
-                                                         config)
+    try:
+        user_pairs = ci.construct_tweet_self_influence_pairs(user,
+                                                             filtered_tweets,
+                                                             "1D",
+                                                             config)
+    except:
+        continue
 
     if user_pairs:
         all_frame_pairs.extend(user_pairs)
 
 all_frame_pairs
+
+with open("self-influence-backup-pairs.json", "w") as fout:
+    json.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
 regression_dfs = {}
@@ -161,23 +167,28 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
     # kind of ugly honestly
     alter_ts_list = []
     if user in mention_neighbors:
+        try:
+            for alter in mention_neighbors[user]:
+                alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
+                                                                    alter,
+                                                                    "1D",
+                                                                    config))
 
-        for alter in mention_neighbors[user]:
-            alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
-                                                                alter,
-                                                                "1D",
-                                                                config))
+            frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
+                                                                   alter_ts_list,
+                                                                   filtered_tweets,
+                                                                   "1D",
+                                                                   config)
 
-        frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
-                                                               alter_ts_list,
-                                                               filtered_tweets,
-                                                               "1D",
-                                                               config)
+        except:
+            continue
 
         if frame_pairs:
             all_frame_pairs.extend(frame_pairs)
 
 all_frame_pairs
+with open("alter-influence-backup-pairs.json", "w") as fout:
+    json.dump(all_frame_pairs, fout)
 # %%
 print("building alter-influence dfs")
 regression_dfs = {}
