@@ -4,6 +4,7 @@
 *.gz
 *.json
 *.zip
+*.pkl
 
 # config etc
 !workflow/*.json

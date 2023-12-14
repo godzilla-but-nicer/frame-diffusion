@@ -56,6 +56,9 @@
     "regression": {
         "features": "data/down_sample/regression/features.tsv",
         "self_output": "data/down_sample/regression/self_output/",
-        "alter_output": "data/down_sample/regression/alter_output/"
+        "alter_output": "data/down_sample/regression/alter_output/",
+        "result_pickles": "data/down_sample/regression/result_pickles/",
+        "self_influence_pairs": "data/down_sample/regression/self_influence_pairs.pkl",
+        "alter_influence_pairs": "data/down_sample/regression/alter_influence_pairs.pkl"
     }
 }
