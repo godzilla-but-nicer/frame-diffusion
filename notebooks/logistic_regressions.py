@@ -93,7 +93,7 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 
-with open("self-influence-backup-pairs.pkl", "w") as fout:
+with open("self-influence-backup-pairs.pkl", "wb") as fout:
     pickle.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
@@ -188,7 +188,7 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
             all_frame_pairs.extend(frame_pairs)
 
 all_frame_pairs
-with open("alter-influence-backup-pairs.pkl", "w") as fout:
+with open("alter-influence-backup-pairs.pkl", "wb") as fout:
     pickle.dump(all_frame_pairs, fout)
 # %%
 print("building alter-influence dfs")
