@@ -37,7 +37,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
@@ -183,22 +183,17 @@ except:
         # kind of ugly honestly
         alter_ts_list = []
         if user in mention_neighbors:
-            try:
-                for alter in mention_neighbors[user]:
-                    alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
-                                                                        alter,
-                                                                        "1D",
-                                                                        config))
+            for alter in mention_neighbors[user]:
+                alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
+                                                                    alter,
+                                                                    "1D",
+                                                                    config))
 
-                frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
-                                                                       alter_ts_list,
-                                                                       filtered_tweets,
-                                                                       "1D",
-                                                                       config)
-
-            except:
-                continue
-
+            frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
+                                                                    alter_ts_list,
+                                                                    filtered_tweets,
+                                                                    "1D",
+                                                                    config)
             if frame_pairs:
                 all_frame_pairs.extend(frame_pairs)
 
