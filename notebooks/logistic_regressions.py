@@ -168,7 +168,8 @@ with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as
 # partially done and we just have to put things into shape
 #
 # %%
-
+print(mention_neighbors)
+exit(1)
 try:
     with open(paths["regression"]["alter_influence_pairs"], "rb") as fout:
         all_frame_pairs = pickle.load(fout)
