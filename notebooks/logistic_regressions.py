@@ -35,24 +35,24 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/sample_paths.json", "r") as pf:
+with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 
 # connect screen names and user ids. needed to work with mention network
-user_id_map = pd.read_csv("data/down_sample/user_id_map.tsv", sep="\t",
+user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
 
 # the mention network itself
-mentions = pd.read_csv("data/down_sample/edge_lists/in_sample_mentions.tsv", sep="\t",
+mentions = pd.read_csv(paths["mentions"]["network"], sep="\t",
                        dtype={"uid1": str, "uid2": str,
                               "1to2freq": int, "2to1freq": int})
 
 # load the tweet json so we can grab additional details
-with open("data/down_sample/immigration_tweets/tweets_by_id.json", "r") as catalog_raw:
+with open(paths["tweet_catalog"], "r") as catalog_raw:
     catalog = json.loads(catalog_raw.read())
 
 # load all of the frames and tweet time stamps etc.
-f = pd.read_csv("data/down_sample/binary_frames/all_frames.tsv", sep="\t")
+f = pd.read_csv(paths["all_frames"], sep="\t")
 filtered_tweets = fs.filter_users_by_activity(f, 10)
 
 # FOR TESTING
@@ -177,8 +177,27 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 # %%
-regression_dfs = build_regression_dfs(all_frame_list, all_frame_pairs, features)
+regression_dfs = {}
+for frame in tqdm(all_frame_list):
 
+    rows = []
+
+    for pair in all_frame_pairs:
+        exposure = pair["t"][frame]
+        cue = pair["t+1"][frame]
+        id = pair["t+1"]["id_str"]
+
+        row = {}
+        row["cue"] = cue
+        row["id_str"] = str(id)
+        row["exposure"] = exposure
+
+        rows.append(row)
+
+    pairs_df = pd.DataFrame(rows)
+
+    regression_dfs[frame] = pd.merge(pairs_df, features, on="id_str", how="left").dropna()
+# %%
 endog_col = "cue"
 exog_cols = ["exposure", 
               "is_quote_status", "is_reply", 
@@ -205,3 +224,5 @@ for frame in tqdm(all_frame_list):
     params_suffix = f"{frame.lower().replace(' ', '_')}_table.csv"
     with open(paths["regression"]["alter_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
+
+# %%
