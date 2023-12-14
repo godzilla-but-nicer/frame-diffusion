@@ -37,7 +37,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
@@ -77,24 +77,26 @@ print("adjacency list loaded")
 # for frames in the previous day. This is the sort of self exposure treatment.
 # This is what we're calling `all_frame_pairs` a tweet and the frames from the day before
 # %%
-all_frame_pairs = []
-print("gathering self-influence pairs \n\n")
-for user in tqdm(filtered_tweets["screen_name"].unique()):
-    try:
-        user_pairs = ci.construct_tweet_self_influence_pairs(user,
-                                                             filtered_tweets,
-                                                             "1D",
-                                                             config)
-    except:
-        continue
+try:
+    with open(paths["regression"]["self_influence_pairs"], "rb") as fout:
+        all_frame_pairs = pickle.load(fout)
+except:
+    all_frame_pairs = []
+    print("gathering self-influence pairs \n\n")
+    for user in tqdm(filtered_tweets["screen_name"].unique()):
+        try:
+            user_pairs = ci.construct_tweet_self_influence_pairs(user,
+                                                                 filtered_tweets,
+                                                                 "1D",
+                                                                 config)
+        except:
+            continue
 
-    if user_pairs:
-        all_frame_pairs.extend(user_pairs)
+        if user_pairs:
+            all_frame_pairs.extend(user_pairs)
 
-all_frame_pairs
-
-with open("self-influence-backup-pairs.pkl", "wb") as fout:
-    pickle.dump(all_frame_pairs, fout)
+    with open(paths["regression"]["self_influence_pairs"], "wb") as fout:
+        pickle.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
 regression_dfs = {}
@@ -127,6 +129,7 @@ exog_cols = ["exposure",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
 print("running self-influence regressions")
+result_dict = {}
 for frame in tqdm(all_frame_list):
 
     clean_frame_df = regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
@@ -134,10 +137,11 @@ for frame in tqdm(all_frame_list):
     response = clean_frame_df[endog_col]
     predictors = sm.add_constant(clean_frame_df[exog_cols])
 
-    model = sm.Logit(endog=response, exog=predictors)
+    model = sm.Logit(endog=response, exog=predictors, )
 
     try:
-        result = model.fit()
+        result = model.fit(maxiter=50)
+        result_dict[frame] = result
     except:
         print(f"no results for frame: {frame}")
         result = None
@@ -151,45 +155,55 @@ for frame in tqdm(all_frame_list):
     with open(paths["regression"]["self_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
+with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
+
+# %% [markdown]
+#
+# While we're here with the regression results in memory, let's plot the
+# coefficients for self-influence
 # %% [markdown]
 #
 # Now we have to do the alter influence regressions. The functions should be
 # partially done and we just have to put things into shape
 #
 # %%
-all_frame_pairs = []
 
-# ok so this is going to be slow as hell
-print("Checking tweet pairs for alter influence")
-for user in tqdm(filtered_tweets["screen_name"].unique()):
+try:
+    with open(paths["regression"]["alter_influence_pairs"], "rb") as fout:
+        all_frame_pairs = pickle.load(fout)
+except:
+    all_frame_pairs = []
+    # ok so this is going to be slow as hell
+    print("Checking tweet pairs for alter influence")
+    for user in tqdm(filtered_tweets["screen_name"].unique()):
 
-    # we gathered a list of neighbors in an earlier cell ;)
-    # now we just have to collect the time series here to pass into the function
-    # kind of ugly honestly
-    alter_ts_list = []
-    if user in mention_neighbors:
-        try:
-            for alter in mention_neighbors[user]:
-                alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
-                                                                    alter,
-                                                                    "1D",
-                                                                    config))
+        # we gathered a list of neighbors in an earlier cell ;)
+        # now we just have to collect the time series here to pass into the function
+        # kind of ugly honestly
+        alter_ts_list = []
+        if user in mention_neighbors:
+            try:
+                for alter in mention_neighbors[user]:
+                    alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
+                                                                        alter,
+                                                                        "1D",
+                                                                        config))
 
-            frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
-                                                                   alter_ts_list,
-                                                                   filtered_tweets,
-                                                                   "1D",
-                                                                   config)
+                frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
+                                                                       alter_ts_list,
+                                                                       filtered_tweets,
+                                                                       "1D",
+                                                                       config)
 
-        except:
-            continue
+            except:
+                continue
 
-        if frame_pairs:
-            all_frame_pairs.extend(frame_pairs)
+            if frame_pairs:
+                all_frame_pairs.extend(frame_pairs)
 
-all_frame_pairs
-with open("alter-influence-backup-pairs.pkl", "wb") as fout:
-    pickle.dump(all_frame_pairs, fout)
+    with open(paths["regression"]["alter_influence_pairs"], "wb") as fout:
+        pickle.dump(all_frame_pairs, fout)
 # %%
 print("building alter-influence dfs")
 regression_dfs = {}
@@ -221,7 +235,7 @@ exog_cols = ["exposure",
               "log_chars", "log_favorites", "log_retweets",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
-
+result_dict = {}
 for frame in tqdm(all_frame_list):
     response = regression_dfs[frame][endog_col]
     predictors = sm.add_constant(regression_dfs[frame][exog_cols])
@@ -229,7 +243,8 @@ for frame in tqdm(all_frame_list):
     model = sm.Logit(endog=response, exog=predictors)
 
     try:
-        result = model.fit()
+        result = model.fit(maxiter=50)
+        result_dict[frame] = result
     except:
         print(f"no results for frame: {frame}")
         continue
@@ -242,4 +257,6 @@ for frame in tqdm(all_frame_list):
     with open(paths["regression"]["alter_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
+with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
 # %%
