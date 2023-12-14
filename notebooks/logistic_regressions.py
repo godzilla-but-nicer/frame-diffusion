@@ -31,29 +31,40 @@ if os.getcwd().split("/")[-1] == "scripts" or os.getcwd().split("/")[-1] == "not
 print(f"Working in {os.getcwd()}")
 
 # config has frame names
+print("loading config and paths")
 with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
 with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
+print("config and paths loaded")
 
 # connect screen names and user ids. needed to work with mention network
+print("loading id map")
 user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
+print("id map loaded")
 
 # the mention network itself
+print("loading mentions")
 mentions = pd.read_csv(paths["mentions"]["network"], sep="\t",
                        dtype={"uid1": str, "uid2": str,
                               "1to2freq": int, "2to1freq": int})
+print("mentions loaded")
 
 # load the tweet json so we can grab additional details
+print("loading tweet json")
 with open(paths["tweet_catalog"], "r") as catalog_raw:
     catalog = json.loads(catalog_raw.read())
+print("tweet json loaded")
+
 
 # load all of the frames and tweet time stamps etc.
+print("loading tweets")
 f = pd.read_csv(paths["all_frames"], sep="\t")
 filtered_tweets = fs.filter_users_by_activity(f, 10)
+print("tweets loaded")
 
 # FOR TESTING
 filtered_tweets = filtered_tweets.sample(frac=1)
@@ -62,20 +73,24 @@ filtered_tweets = filtered_tweets.sample(frac=1)
 all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + config["frames"]["narrative"]
 
 # load the features dataset
+print("loading features")
 features = pd.read_csv(paths["regression"]["features"], sep="\t")
 features["id_str"] = features["id_str"].astype(str)
 features = features.drop_duplicates()
+print("features loaded")
 
 # adjacency list for neighbor lookup
+print("loading adjacency list")
 with open(paths["mentions"]["adjacency_list"], "r") as fout:
     mention_neighbors = json.loads(fout.read())
+print("adjacency list loaded")
 # %% [markdown]
 # Ok now we need to built the treatment pairs, Basically for each tweet we look
 # for frames in the previous day. This is the sort of self exposure treatment.
 # This is what we're calling `all_frame_pairs` a tweet and the frames from the day before
 # %%
 all_frame_pairs = []
-
+print("gathering self-influence pairs \n\n")
 for user in tqdm(filtered_tweets["screen_name"].unique()):
     user_pairs = ci.construct_tweet_self_influence_pairs(user,
                                                          filtered_tweets,
@@ -87,6 +102,7 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 # %%
+print("building self-influence dfs \n\n")
 regression_dfs = {}
 for frame in tqdm(all_frame_list):
 
@@ -116,7 +132,7 @@ exog_cols = ["exposure",
               "log_chars", "log_favorites", "log_retweets",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
-
+print("running self-influence regressions")
 for frame in tqdm(all_frame_list):
 
     clean_frame_df = regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
@@ -149,7 +165,6 @@ for frame in tqdm(all_frame_list):
 # %%
 all_frame_pairs = []
 
-
 # ok so this is going to be slow as hell
 print("Checking tweet pairs for alter influence")
 for user in tqdm(filtered_tweets["screen_name"].unique()):
@@ -177,6 +192,7 @@ for user in tqdm(filtered_tweets["screen_name"].unique()):
 
 all_frame_pairs
 # %%
+print("building alter-influence dfs")
 regression_dfs = {}
 for frame in tqdm(all_frame_list):
 
@@ -198,6 +214,8 @@ for frame in tqdm(all_frame_list):
 
     regression_dfs[frame] = pd.merge(pairs_df, features, on="id_str", how="left").dropna()
 # %%
+
+print("running alter-influence regressions")
 endog_col = "cue"
 exog_cols = ["exposure", 
               "is_quote_status", "is_reply", 
