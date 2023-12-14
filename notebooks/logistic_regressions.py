@@ -183,6 +183,7 @@ except:
         # kind of ugly honestly
         alter_ts_list = []
         if user in mention_neighbors:
+            print("found_user")
             for alter in mention_neighbors[user]:
                 alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
                                                                     alter,
