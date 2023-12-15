@@ -1,5 +1,6 @@
 import json
 from tqdm import tqdm
+import pandas as pd
 
 import frame_stats as fs
 import frame_stats.time_series as ts
