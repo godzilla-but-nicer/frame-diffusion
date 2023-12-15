@@ -1,6 +1,11 @@
 import json
 from tqdm import tqdm
 
+import frame_stats as fs
+import frame_stats.time_series as ts
+import frame_stats.causal_inferrence as ci  # has the functions for setting up regression
+import pickle
+
 print("loading config and paths")
 with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
@@ -17,7 +22,7 @@ user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
 print("id map loaded")
 
 print("loading adjacency list")
-with open(paths["mentions"]["adjacency_list"], "r") as fout:
+with open(paths["mentions"]["adjacency_list_ids"], "r") as fout:
     mention_neighbors = json.loads(fout.read())
 print("adjacency list loaded")
 

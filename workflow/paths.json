@@ -52,7 +52,8 @@
         "id_map": "data/user_id_map.tsv",
         "network": "data/edge_lists/in_sample_mentions.tsv",
         "raw_network": "data/edge_lists/mention-network.2012-2020_04_09.tsv",
-        "adjacency_list": "data/edge_lists/mention_neighbors.json",
+        "adjacency_list_ids": "data/edge_lists/mention_neighbors.json",
+        "adjacency_list": "data/edge_lists/mention_neighbors_names.json",
         "neighbors": "data/edge_lists/mention_neighbots.json"
     },
     "regression": {
