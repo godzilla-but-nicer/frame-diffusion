@@ -50,5 +50,5 @@ for user_id in mention_neighbors.keys():
 mention_neighbors = new_mention_neighbors
 print("conversion complete")
 
-with open(paths["mentions"]["adjacency_list_names"], "w") as fnames:
+with open(paths["mentions"]["adjacency_list"], "w") as fnames:
     json.dump(mention_neighbors, fnames)
