@@ -22,6 +22,12 @@ user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
                           dtype={"screen_name": str, "user_id": str})
 print("id map loaded")
 
+print("building screen name lookup")
+name_lookup = {}
+for _, row in tqdm(user_id_map.iterrows()):
+    name_lookup[row["user_id"]] = row["screen_name"]
+print("screen name lookup built")
+
 print("loading adjacency list")
 with open(paths["mentions"]["adjacency_list_ids"], "r") as fout:
     mention_neighbors = json.loads(fout.read())
@@ -32,13 +38,14 @@ print("converting user ids to screen names")
 new_mention_neighbors = {}
 for user_id in mention_neighbors.keys():
 
-    screen_name = ts.get_screen_name(user_id, user_id_map)
-    new_mention_neighbors[screen_name] = []
+    if user_id in name_lookup:
+        screen_name = name_lookup[user_id]
+        new_mention_neighbors[screen_name] = []
 
-    for neighbor in mention_neighbors[user_id]:
-        neighbor_screen_name = ts.get_screen_name(neighbor, user_id_map)
-        if neighbor_screen_name:
-            new_mention_neighbors[screen_name].append(neighbor_screen_name)
+        for neighbor in mention_neighbors[user_id]:
+            if neighbor in name_lookup:
+                neighbor_screen_name = name_lookup[neighbor]
+                new_mention_neighbors[screen_name].append(neighbor_screen_name)
 
 mention_neighbors = new_mention_neighbors
 print("conversion complete")

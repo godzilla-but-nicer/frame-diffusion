@@ -27,3 +27,37 @@ with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "rb") as
 # %%
 frame = "Economic"
 
+print(self_results[frame].pvalues)
+print(self_results[frame].params)
+# %%
+collected_self_results = {"frame": [], "coef": [], "pvalue": []}
+for frame in self_results.keys():
+    collected_self_results["frame"].append(frame)
+    collected_self_results["coef"].append(self_results[frame].params["exposure"])
+    collected_self_results["pvalue"].append(self_results[frame].pvalues["exposure"])
+
+exposure_results = pd.DataFrame(collected_self_results)
+exposure_results["bonferroni_pvalue"] = exposure_results["pvalue"] * exposure_results.shape[0]
+
+bad_prediction = []
+for _, row in exposure_results.iterrows():
+    if row["frame"] in config["frames"]["low_f1"]:
+        bad_prediction.append(True)
+    else:
+        bad_prediction.append(False)
+
+exposure_results["bad_f1"] = bad_prediction
+
+
+# %%
+exposure_results = exposure_results.sort_values("coef", ascending=False)
+fig, ax = plt.subplots(dpi=300)
+sns.barplot(data=exposure_results, x="coef", y="frame",
+            hue="bad_f1", dodge=False, ax=ax)
+ax.set_ylabel('')
+plt.tight_layout()
+ax.set_xlabel("Self-exposure Log Odds-Ratio")
+plt.savefig("plots/regression/self_influence_treatment.png")
+plt.savefig("plots/regression/self_influence_treatment.pdf")
+plt.show()
+# %%
