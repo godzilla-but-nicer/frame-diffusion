@@ -41,13 +41,6 @@ with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
-# connect screen names and user ids. needed to work with mention network
-print("loading id map")
-user_id_map = pd.read_csv(paths["public"]["user_id_map"], sep="\t",
-                          dtype={"screen_name": str, "user_id": str})
-print("id map loaded")
-
-
 # load all of the frames and tweet time stamps etc.
 print("loading tweets")
 f = pd.read_csv(paths["all_frames"], sep="\t")
@@ -73,21 +66,6 @@ with open(paths["mentions"]["adjacency_list"], "r") as fout:
     mention_neighbors = json.loads(fout.read())
 print("adjacency list loaded")
 
-if paths["dataset"] == "full":
-    print("converting user ids to screen names")
-    new_mention_neighbors = {}
-    for user_id in mention_neighbors.keys():
-
-        screen_name = ts.get_screen_name(user_id, user_id_map)
-        new_mention_neighbors[screen_name] = []
-
-        for neighbor in mention_neighbors[user_id]:
-            neighbor_screen_name = ts.get_screen_name(neighbor, user_id_map)
-            if neighbor_screen_name:
-                new_mention_neighbors[screen_name].append(neighbor_screen_name)
-    
-    mention_neighbors = new_mention_neighbors
-    print("conversion complete")
 # %% [markdown]
 # Ok now we need to built the treatment pairs, Basically for each tweet we look
 # for frames in the previous day. This is the sort of self exposure treatment.
