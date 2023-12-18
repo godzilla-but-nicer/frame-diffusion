@@ -326,7 +326,7 @@ rule combine_all_frames:
                group=["journalists", "congress", "trump", "retweets"],
                frame_type=["generic", "specific", "narrative"])
     output:
-        "data/binary_frames/all_group_frames.tsv"
+        "data/binary_frames/all_frames.tsv"
 
     shell:
         "python scripts/scripts/build_all_frame_df.py"

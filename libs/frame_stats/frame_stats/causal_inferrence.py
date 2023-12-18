@@ -110,7 +110,8 @@ def construct_tweet_alter_influence_pairs(user: str,
     ts_empty_array = np.zeros(alter_time_series[0].values.shape)
 
     for _, alter_ts in enumerate(alter_time_series):
-        ts_empty_array += alter_ts.values
+        if alter_ts.values.shape == ts_empty_array.shape:
+            ts_empty_array += alter_ts.values
     
     combined_alter_time_series = pd.DataFrame(ts_empty_array,
                                               index=ts_index,

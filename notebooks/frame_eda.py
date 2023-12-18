@@ -9,7 +9,12 @@ from scipy.stats import entropy
 from frame_stats import bootstrap_ci, bootstrap_ci_multivariate, draw_frame_frequencies
 from itertools import product
 
-with open("../workflow/config.json", "r") as cf:
+import os
+if os.getcwd().split("/")[-1] == "scripts" or os.getcwd().split("/")[-1] == "notebooks":
+    os.chdir("../")
+print(f"Working in {os.getcwd()}")
+
+with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # load data

@@ -159,10 +159,6 @@ with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as
 
 # %% [markdown]
 #
-# While we're here with the regression results in memory, let's plot the
-# coefficients for self-influence
-# %% [markdown]
-#
 # Now we have to do the alter influence regressions. The functions should be
 # partially done and we just have to put things into shape
 #
