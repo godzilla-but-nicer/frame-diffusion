@@ -62,7 +62,7 @@ neighbors_df = mentions.groupby("source")["target"].unique().reset_index()
 for _, row in tqdm(neighbors_df.iterrows()):
     neighbors[row["source"]] = list(row["target"])
 
-with open(paths["mentions"]["adjacency_list"], "w") as fout:
+with open(paths["mentions"]["adjacency_list_ids"], "w") as fout:
     json.dump(neighbors, fout)
 print("mention neighbor dict complete")
 
@@ -169,5 +169,5 @@ meta_subset = pd.merge(meta_subset, names, on="id_str", how="left")
 features_df = pd.merge(meta_subset, pd.DataFrame(feature_rows), how="left", on="screen_name")
 features_df.to_csv(paths["regression"]["features"], sep="\t", index=False)
 
-with open(paths["mentions"]["neighbors"], "w") as neighbors_out:
+with open(paths["mentions"]["adjacency_list"], "w") as neighbors_out:
     json.dump(mention_neighbors, neighbors_out)

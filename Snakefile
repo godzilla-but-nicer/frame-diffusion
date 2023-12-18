@@ -44,8 +44,8 @@ rule download_and_parse_tweets:
         "data/non_immigration_tweets/congress.tsv",
         "data/immigration_tweets/trump.tsv",
         "data/immigration_tweets/journalists.tsv",
-        "data/decahose_retweets/{year}_retweets.tsv",
-        "data/decahose_retweets/{year}_retweets.gz"
+        expand("data/decahose_retweets/{year}_retweets.tsv", year=["2018", "2019"]),
+        expand("data/decahose_retweets/{year}_retweets.gz", year=["2018", "2019"])
 
 
 # 1. Download/extract the immigration tweet json data
@@ -331,9 +331,51 @@ rule combine_all_frames:
     shell:
         "python scripts/scripts/build_all_frame_df.py"
 
-# Rules for all of the nondyad analysis
-rule 
+# Logistic regression and related tasks
 
+# the regression itself, uses files built in rules below. probably want to rewrite
+# the script as an actual script at some point
+rule run_logistic_regession:
+    input:
+        "data/binary_frames/all_frames.tsv",
+        "data/regression/features.tsv",
+        "data/edge_lists/mention_neighbors_names.json"
+    output:
+        "data/regression/result_pickles/self_influence.pkl",
+        "data/regression/result_pickles/alter_influence.pkl",
+        "data/regression/self_influence_pairs.pkl",
+        "data/regresion/alter_influence_pairs.pkl"
+    shell:
+        "python notebooks/logistic_regression.py"
+
+
+# this actually builds both the features dataframe and the hashed mention network
+# figure we might as well do it all in one pass over the frame df rather than
+# break it out into two rules. it is a bit nastier though
+rule build_features_df_for_regression:
+    input:
+        "data/binary_frames/all_frames.tsv",
+        "data/user_info/user_id_map.tsv",
+        "data/user_info/full_datasheet.tsv",
+        "data/edge_lists/in_sample_mentions.tsv"
+    output:
+        "data/edge_lists/mention_neighbors.json",
+        "data/edge_lists/mention_neighbors_names.json",
+        "data/regression/features.tsv"
+    shell:
+        "python scripts/build_features_df_for_regression.py"
+
+
+rule build_user_time_series_hash:
+    input:
+        "data/binary_frames/all_tweets.tsv"
+    output:
+        "data/binary_frames/user_time_series.pkl"
+    shell:
+        "python scripts/build_time_series_hash.py"
+
+
+# Rules for all of the nondyad analysis
 rule identify_successors:
     input:
         "data/immigration_tweets/US_2018.gz",

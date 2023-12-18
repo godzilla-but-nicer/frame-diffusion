@@ -16,6 +16,9 @@ updates.md
 papers/
 plots/
 
+# unused pipeline elements
+ignore/
+
 # random figures
 *.pdf
 *.png

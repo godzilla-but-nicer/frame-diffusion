@@ -2,7 +2,7 @@
     "dataset": "sample",
     "tweet_catalog": "data/down_sample/immigration_tweets/tweets_by_id.json",
     "all_frames": "data/down_sample/binary_frames/all_frames.tsv",
-    "user_time_series": "data/down_sample/user_time_series.pkl",
+    "user_time_series": "data/down_sample/binary_frames/user_time_series.pkl",
     "congress": {
         "metadata": "data/user_info/congress_info.tsv",
         "full_tweets": "data/down_sample/immigration_tweets/congress.tsv",

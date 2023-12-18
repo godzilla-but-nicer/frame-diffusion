@@ -36,7 +36,7 @@ print("loading config and paths")
 with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
-# paths to data files ( need to fix this)
+# paths to data files
 with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
@@ -55,8 +55,7 @@ all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + co
 
 # load the features dataset
 print("loading features")
-features = pd.read_csv(paths["regression"]["features"], sep="\t")
-features["id_str"] = features["id_str"].astype(str)
+features = pd.read_csv(paths["regression"]["features"], sep="\t", dtype={"id_str": str})
 features = features.drop_duplicates()
 print("features loaded")
 
@@ -65,6 +64,11 @@ print("loading adjacency list")
 with open(paths["mentions"]["adjacency_list"], "r") as fout:
     mention_neighbors = json.loads(fout.read())
 print("adjacency list loaded")
+
+print("loading user time series hash")
+with open(paths["user_time_series"], "rb") as utspkl:
+    user_time_series = pickle.load(utspkl)
+print("loaded user time series hash")
 
 # %% [markdown]
 # Ok now we need to built the treatment pairs, Basically for each tweet we look
@@ -89,8 +93,9 @@ except:
         if user_pairs:
             all_frame_pairs.extend(user_pairs)
 
-    with open(paths["regression"]["self_influence_pairs"], "wb") as fout:
-        pickle.dump(all_frame_pairs, fout)
+    if len(all_frame_pairs) > 0:
+        with open(paths["regression"]["self_influence_pairs"], "wb") as fout:
+            pickle.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
 regression_dfs = {}
@@ -162,9 +167,8 @@ with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as
 # partially done and we just have to put things into shape
 #
 # %%
-
 try:
-    with open(paths["regression"]["alter_influence_pairs"], "rb") as fout:
+    with open(paths["regression"]["alter_influence_pairs"] + "q", "rb") as fout:
         all_frame_pairs = pickle.load(fout)
 except:
     all_frame_pairs = []
@@ -178,21 +182,21 @@ except:
         alter_ts_list = []
         if user in mention_neighbors:
             for alter in mention_neighbors[user]:
-                alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
-                                                                    alter,
-                                                                    "1D",
-                                                                    config))
+                if alter in user_time_series:
+                    alter_ts_list.append(user_time_series[alter])
 
             frame_pairs = ci.construct_tweet_alter_influence_pairs(user,
-                                                                    alter_ts_list,
-                                                                    filtered_tweets,
-                                                                    "1D",
-                                                                    config)
+                                                                   alter_ts_list,
+                                                                   filtered_tweets,
+                                                                   "1D",
+                                                                   config)
             if frame_pairs:
                 all_frame_pairs.extend(frame_pairs)
 
-    with open(paths["regression"]["alter_influence_pairs"], "wb") as fout:
-        pickle.dump(all_frame_pairs, fout)
+    if len(all_frame_pairs) > 0:
+        with open(paths["regression"]["alter_influence_pairs"], "wb") as fout:
+            pickle.dump(all_frame_pairs, fout)
+
 # %%
 print("building alter-influence dfs")
 regression_dfs = {}
