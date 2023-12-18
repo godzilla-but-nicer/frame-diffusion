@@ -5,8 +5,8 @@ from typing import Dict, List, Optional
 
 # core function for extracting the frame time series. used in the more complex
 # functions below
-def construct_frame_time_series(df: pd.DataFrame,
-                                user: str,
+def construct_frame_time_series(user: str,
+                                df: pd.DataFrame,
                                 frequency: str,
                                 config: Dict) -> pd.DataFrame:
 

@@ -37,7 +37,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
@@ -177,7 +177,6 @@ except:
         # kind of ugly honestly
         alter_ts_list = []
         if user in mention_neighbors:
-            print("found_user")
             for alter in mention_neighbors[user]:
                 alter_ts_list.append(ts.construct_frame_time_series(filtered_tweets,
                                                                     alter,
