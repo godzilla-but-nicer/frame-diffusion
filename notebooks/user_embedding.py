@@ -14,68 +14,20 @@ print(f"Working in {os.getcwd()}")
 with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
-# %%
-groups = ["congress", "journalists", "trump", "public"]
-frame_types = ["generic", "specific"]
-all_frame_dfs = []
 
-frames = {k: {} for k in groups}
-for group in tqdm(groups):
-    type_dfs = []
-    if group != "public":
-        for frame_type in frame_types:
+with open("workflow/sample_paths.json", "r") as pf:
+    paths = json.loads(pf.read())
+print("config and paths loaded")
 
-            # all frames are in one file for the public
-            # we have to merge a couple of different files in either case
-            if group != "public":
-                # predicted frames
-                predictions = pd.read_csv(f"data/binary_frames/{group}/{group}_{frame_type}.tsv",
-                                          sep="\t").drop("text", axis="columns")
 
-                # time stamps for granger causality
-                tweet_info = pd.read_csv(f"data/immigration_tweets/{group}.tsv",
-                                         sep="\t")[["id_str", "time_stamp", "screen_name"]]
-
-                tweet_info["id_str"] = tweet_info["id_str"].astype(str)
-                predictions["id_str"] = predictions["id_str"].astype(str)
-
-                # merge and add to list of dataframes to combine
-                tweet_df = pd.merge(tweet_info, predictions,
-                                    how="right", on="id_str")
-                tweet_df["group"] = group
-                type_dfs.append(tweet_df)
-
-        all_frames_for_group = reduce(lambda l, r: pd.merge(l, r,
-                                                            on=["id_str",
-                                                                "time_stamp",
-                                                                "screen_name",
-                                                                "group"]),
-                                      type_dfs)
-
-    else:
-        # frame predictions
-        predictions = pd.read_csv(f"data/binary_frames/predicted_frames.tsv",
-                                  sep="\t")
-        tweet_info = pd.read_csv("data/us_public_ids.tsv", sep="\t")
-        tweet_info["time_stamp"] = pd.to_datetime(tweet_info["time_stamp"])
-
-        # tweet_info["time_stamp"] = datetime.strptime(tweet_info["time_stamp"],
-        #                                              "%a %b %d %H:%M:%S +0000 %Y")
-
-        all_frames_for_group = pd.merge(tweet_info, predictions, on="id_str")
-        all_frames_for_group["group"] = "public"
-
-    all_frame_dfs.append(all_frames_for_group)
-
-    all_frames = pd.concat(all_frame_dfs)
+all_frames = pd.read_csv(paths["all_frames"], sep="\t")
 
 # %%
 # subsample the public
-public_sample_fraction = 0.2
-required_observations = 3
+public_sample_fraction = 1
+required_observations = 10
 sampled_public = all_frames[all_frames["group"] == "public"].sample(frac=public_sample_fraction)
 filtered_public = sampled_public.groupby("screen_name").filter(lambda x: len(x) > required_observations)
-filtered_public = filtered_public.drop(["Hero", "Threat", "Victim"], axis="columns")
 
 # drop the public from the all frames df and add back the sample
 sampled_frames = all_frames[all_frames["group"] != "public"]
@@ -98,7 +50,6 @@ frame_means = thin_frames.groupby(["screen_name", "group"]).mean().reset_index()
 
 # %%
 from sklearn.decomposition import PCA
-from umap import UMAP
 
 pca = PCA(n_components=2)
 
@@ -109,14 +60,7 @@ congress = X_pca[frame_means["group"] == "congress"]
 
 
 fig, ax = plt.subplots(figsize=(6, 6))
-ax.scatter(non_congress[:, 0], non_congress[:, 1], alpha=0.05)
-for i, pt in enumerate(congress):
-    if info_frames.iloc[i]["party"] == "D":
-        ax.scatter(pt[0], pt[1], c="blue", marker="x", label="Democrat")
-    elif info_frames.iloc[i]["party"] == "R":
-        ax.scatter(pt[0], pt[1], c="red", marker="x", label="Republican")
-    else:
-        ax.scatter(pt[0], pt[1], c="green", marker="x", label="Independent/Nonpartisan")
+ax.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.05)
 
 pca.explained_variance_ratio_[0]
 

@@ -335,11 +335,12 @@ rule combine_all_frames:
 
 # the regression itself, uses files built in rules below. probably want to rewrite
 # the script as an actual script at some point
-rule run_logistic_regession:
+rule run_logistic_regression:
     input:
         "data/binary_frames/all_frames.tsv",
         "data/regression/features.tsv",
-        "data/edge_lists/mention_neighbors_names.json"
+        "data/edge_lists/mention_neighbors_names.json",
+
     output:
         "data/regression/result_pickles/self_influence.pkl",
         "data/regression/result_pickles/alter_influence.pkl",
@@ -357,7 +358,8 @@ rule build_features_df_for_regression:
         "data/binary_frames/all_frames.tsv",
         "data/user_info/user_id_map.tsv",
         "data/user_info/full_datasheet.tsv",
-        "data/edge_lists/in_sample_mentions.tsv"
+        "data/edge_lists/in_sample_mentions.tsv",
+        "data/binary_frames/user_time_series.pkl"
     output:
         "data/edge_lists/mention_neighbors.json",
         "data/edge_lists/mention_neighbors_names.json",
@@ -368,7 +370,7 @@ rule build_features_df_for_regression:
 
 rule build_user_time_series_hash:
     input:
-        "data/binary_frames/all_tweets.tsv"
+        "data/binary_frames/all_frames.tsv"
     output:
         "data/binary_frames/user_time_series.pkl"
     shell:
