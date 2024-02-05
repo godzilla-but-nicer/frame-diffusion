@@ -9,6 +9,7 @@ from tqdm import tqdm
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime as dt
 from datetime import timedelta
+from sys import argv
 
 import frame_stats as fs
 import frame_stats.time_series as ts
@@ -92,27 +93,25 @@ def get_user_regression_pairs(user: str,
 
 import warnings
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    
-    self_regression_pairs = []
-    for user in tqdm(filtered_tweets["screen_name"].unique()):
-        user_tweets = filtered_tweets[filtered_tweets["screen_name"] == user]
-        try:
-            self_regression_pairs.extend(get_user_regression_pairs(user,
-                                                                   user_tweets,
-                                                                   user_time_series[user],
-                                                                   1))
-        except Exception as e:
-            print(f"{type(e).__name__}: {e}")
-            continue
+if not argv[1] == "--skip-self":
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-self_regression_pairs
-# %%
-with open(paths["regression"]["self_influence_pairs"], "wb") as fout:
-    pickle.dump(self_regression_pairs, fout)
-# %%
+        self_regression_pairs = []
+        for user in tqdm(filtered_tweets["screen_name"].unique()):
+            user_tweets = filtered_tweets[filtered_tweets["screen_name"] == user]
+            try:
+                self_regression_pairs.extend(get_user_regression_pairs(user,
+                                                                       user_tweets,
+                                                                       user_time_series[user],
+                                                                       1))
+            except Exception as e:
+                print(f"{type(e).__name__}: {e}")
+                continue
 
+    with open(paths["regression"]["self_influence_pairs"], "wb") as fout:
+        pickle.dump(self_regression_pairs, fout)
+# %%
 # same proceedure for the alter pairs
 def get_alter_regression_pairs(user,
                                user_tweets,

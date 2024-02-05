@@ -271,7 +271,7 @@ plt.show()
 
 # %% [markdown]
 # Ok all of the combinations either miss obvious peaks or find bad ones. We'll
-# just use prominence = 0.125. Let's look at a few different frames now just
+# just use prominence = 0.15. Let's look at a few different frames now just
 # to see how they look
 
 # %%
@@ -286,7 +286,7 @@ for i, frame in enumerate(frames):
     frame_sums = frame_ts[frame]
     time_stamps = frame_ts["time_stamp"]
 
-    peaks = find_peaks(frame_sums_normed, prominence=0.125)
+    peaks = find_peaks(frame_sums_normed, prominence=0.15)
     ax[i].plot(time_stamps, frame_sums)
     ax[i].scatter(time_stamps[peaks[0]], frame_sums[peaks[0]],
             marker="x", c="k", s=50)
@@ -308,7 +308,7 @@ plt.show()
 # 
 # Of course we'll also want to get it into a script and snakemake eventually.
 # %%
-prom_filter = 0.15
+prom_filter = 0.2
 rows = []
 for frame in all_frame_list:
     frame_sums_normed = frame_ts[frame] / frame_ts[frame].max()
