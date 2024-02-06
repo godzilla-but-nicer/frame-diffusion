@@ -168,5 +168,5 @@ with warnings.catch_warnings():
 
 
 with open(paths["regression"]["alter_influence_pairs"], "wb") as fout:
-    pickle.dump(self_regression_pairs, fout)
+    pickle.dump(alter_regression_pairs, fout)
 # %%
