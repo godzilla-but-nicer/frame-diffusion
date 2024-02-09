@@ -163,7 +163,7 @@ with warnings.catch_warnings():
                                                                    mention_neighbors[user],
                                                                    1))
         except Exception as e:
-            print(f"{type(e).__name__}: {e}")
+            # print(f"{type(e).__name__}: {e}")
             continue
 
 
