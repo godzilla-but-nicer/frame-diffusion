@@ -28,7 +28,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 

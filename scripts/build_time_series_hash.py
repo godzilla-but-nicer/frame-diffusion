@@ -25,15 +25,14 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files ( need to fix this)
-with open("workflow/sample_paths.json", "r") as pf:
+with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
 
 # load all of the frames and tweet time stamps etc.
 print("loading tweets")
-f = pd.read_csv(paths["all_frames"], sep="\t")
-filtered_tweets = fs.filter_users_by_activity(f, 10)
+filtered_tweets = pd.read_csv(paths["all_frames"], sep="\t")
 print("tweets loaded")
 
 # FOR TESTING
