@@ -37,7 +37,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
@@ -104,7 +104,7 @@ for frame in tqdm(all_frame_list):
     rows = []
 
     for pair in all_frame_pairs:
-        exposure = pair["t"][frame]
+        exposure = pair["t"][frame].values[0]
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
 
