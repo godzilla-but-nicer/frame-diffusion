@@ -104,7 +104,7 @@ for frame in tqdm(all_frame_list):
     rows = []
 
     for pair in all_frame_pairs:
-        exposure = pair["t"][frame]
+        exposure = pair["t"][frame].values[0]
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
 
@@ -164,7 +164,7 @@ with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as
 #
 # %%
 try:
-    with open(paths["regression"]["alter_influence_pairs"] + "q", "rb") as fout:
+    with open(paths["regression"]["alter_influence_pairs"], "rb") as fout:
         all_frame_pairs = pickle.load(fout)
 except:
     all_frame_pairs = []
@@ -201,7 +201,7 @@ for frame in tqdm(all_frame_list):
     rows = []
 
     for pair in all_frame_pairs:
-        exposure = pair["t"][frame]
+        exposure = pair["t"][frame].values[0]
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
 
