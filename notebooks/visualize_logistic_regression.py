@@ -24,6 +24,17 @@ print("config and paths loaded")
 # load the results dictionary
 with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "rb") as self_pkl:
     self_results = pickle.load(self_pkl)
+
+granger_causal_frames = ["Morality and Ethics",
+                         "Victim: Humanitarian",
+                         "Legality, Constitutionality, Jurisdiction",
+                         "Crime and Punishment",
+                         "Policy Prescription and Evaluation",
+                         "Security and Defense",
+                         "External Regulation and Reputation"]
+
+all_frames = config["frames"]["generic"] + config["frames"]["specific"]# + config["frames"]["narrative"]
+good_frames = [frame for frame in all_frames if frame not in config["frames"]["low_f1"]]
 # %%
 frame = "Economic"
 
@@ -31,7 +42,7 @@ print(self_results[frame].pvalues)
 print(self_results[frame].params)
 # %%
 collected_self_results = {"frame": [], "coef": [], "pvalue": []}
-for frame in self_results.keys():
+for frame in good_frames:
     collected_self_results["frame"].append(frame)
     collected_self_results["coef"].append(self_results[frame].params["exposure"])
     collected_self_results["pvalue"].append(self_results[frame].pvalues["exposure"])
@@ -74,7 +85,7 @@ for _, row in exposure_results.iterrows():
 print(ranksums(generic, specific))
 # %%
 collected_self_results = {"frame": [], "coef": [], "pvalue": []}
-for frame in self_results.keys():
+for frame in good_frames:
     collected_self_results["frame"].append(frame)
     collected_self_results["coef"].append(self_results[frame].params["ideology"])
     collected_self_results["pvalue"].append(self_results[frame].pvalues["ideology"])
@@ -108,7 +119,7 @@ with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "rb") a
     alter_results = pickle.load(self_pkl)
 
 collected_alter_results = {"frame": [], "coef": [], "pvalue": []}
-for frame in alter_results.keys():
+for frame in good_frames:
     collected_alter_results["frame"].append(frame)
     collected_alter_results["coef"].append(alter_results[frame].params["exposure"])
     collected_alter_results["pvalue"].append(alter_results[frame].pvalues["exposure"])

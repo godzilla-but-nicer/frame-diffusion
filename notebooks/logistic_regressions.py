@@ -104,6 +104,8 @@ for frame in tqdm(all_frame_list):
     rows = []
 
     for pair in all_frame_pairs:
+        print("this is where its breaking")
+        pair["t"][frame]
         exposure = pair["t"][frame].values[0]
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
