@@ -207,7 +207,13 @@ for frame in tqdm(all_frame_list):
     rows = []
 
     for pair in all_frame_pairs:
-        exposure = pair["t"][frame].values[0]
+        
+        # manually add zeros for dates with no frame info
+        if len(pair["t"]) == 0:
+            exposure = 0
+        else:
+            exposure = pair["t"][frame].values[0]
+        
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
 
