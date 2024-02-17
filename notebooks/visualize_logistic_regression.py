@@ -34,6 +34,7 @@ granger_causal_frames = ["Morality and Ethics",
                          "External Regulation and Reputation"]
 
 all_frames = config["frames"]["generic"] + config["frames"]["specific"]# + config["frames"]["narrative"]
+all_frames = config["frames"]["generic"]
 good_frames = [frame for frame in all_frames if frame not in config["frames"]["low_f1"]]
 # %%
 frame = "Economic"
@@ -49,40 +50,22 @@ for frame in good_frames:
 
 exposure_results = pd.DataFrame(collected_self_results)
 exposure_results["bonferroni_pvalue"] = exposure_results["pvalue"] * exposure_results.shape[0]
-
-bad_prediction = []
-for _, row in exposure_results.iterrows():
-    if row["frame"] in config["frames"]["low_f1"]:
-        bad_prediction.append(True)
-    else:
-        bad_prediction.append(False)
-
-exposure_results["bad_f1"] = bad_prediction
-
+exposure_results["Significant"] = exposure_results["bonferroni_pvalue"] < 0.05
 
 # %%
 exposure_results = exposure_results.sort_values("coef", ascending=False)
+
 fig, ax = plt.subplots(dpi=300)
 sns.barplot(data=exposure_results, x="coef", y="frame",
-            hue="bad_f1", dodge=False, ax=ax)
+            hue="Significant", dodge=False, ax=ax)
+
 ax.set_ylabel('')
 plt.tight_layout()
 ax.set_xlabel("Self-exposure Log Odds-Ratio")
 plt.savefig("plots/regression/self_influence_treatment.png")
 plt.savefig("plots/regression/self_influence_treatment.pdf")
 plt.show()
-# %%
-from scipy.stats import ranksums
 
-specific = []
-generic = []
-for _, row in exposure_results.iterrows():
-    if ":" in row["frame"] and row["frame"] not in config["frames"]["low_f1"]:
-        specific.append(row["coef"])
-    elif ":" not in row["frame"] and row["frame"] not in config["frames"]["low_f1"]:
-        generic.append(row["coef"])
-
-print(ranksums(generic, specific))
 # %%
 collected_self_results = {"frame": [], "coef": [], "pvalue": []}
 for frame in good_frames:
@@ -92,21 +75,15 @@ for frame in good_frames:
 
 ideology_results = pd.DataFrame(collected_self_results)
 ideology_results["bonferroni_pvalue"] = ideology_results["pvalue"] * ideology_results.shape[0]
-
-bad_prediction = []
-for _, row in ideology_results.iterrows():
-    if row["frame"] in config["frames"]["low_f1"]:
-        bad_prediction.append(True)
-    else:
-        bad_prediction.append(False)
-
-ideology_results["bad_f1"] = bad_prediction
+ideology_results["Significant"] = ideology_results["bonferroni_pvalue"] < 0.05
 
 # %%
 ideology_results = ideology_results.sort_values("coef", ascending=False)
+
 fig, ax = plt.subplots(dpi=300)
 sns.barplot(data=ideology_results, x="coef", y="frame",
-            hue="bad_f1", dodge=False, ax=ax)
+            hue="Significant", dodge=False, ax=ax)
+
 ax.set_ylabel('')
 plt.tight_layout()
 ax.set_xlabel("Self-exposure Ideology Coefficient")
@@ -114,7 +91,6 @@ plt.savefig("plots/regression/self_influence_ideology.png")
 plt.savefig("plots/regression/self_influence_ideology.pdf")
 plt.show()
 # %%
-
 with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "rb") as self_pkl:
     alter_results = pickle.load(self_pkl)
 
@@ -126,20 +102,13 @@ for frame in good_frames:
 
 exposure_results = pd.DataFrame(collected_alter_results)
 exposure_results["bonferroni_pvalue"] = exposure_results["pvalue"] * exposure_results.shape[0]
+exposure_results["Significant"] = exposure_results["bonferroni_pvalue"] < 0.05
 
-bad_prediction = []
-for _, row in exposure_results.iterrows():
-    if row["frame"] in config["frames"]["low_f1"]:
-        bad_prediction.append(True)
-    else:
-        bad_prediction.append(False)
-
-exposure_results["bad_f1"] = bad_prediction
 # %%
 exposure_results = exposure_results.sort_values("coef", ascending=False)
 fig, ax = plt.subplots(dpi=300)
 sns.barplot(data=exposure_results, x="coef", y="frame",
-            hue="bad_f1", dodge=False, ax=ax)
+            hue="Significant", dodge=False, ax=ax)
 ax.set_ylabel('')
 plt.tight_layout()
 ax.set_xlabel("Alter-exposure Log Odds-Ratio")
