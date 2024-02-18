@@ -35,8 +35,6 @@ print("loading tweets")
 filtered_tweets = pd.read_csv(paths["all_frames"], sep="\t")
 print("tweets loaded")
 
-# FOR TESTING
-filtered_tweets = filtered_tweets.sample(frac=1)
 # %%
 user_time_series = {}
 for user in tqdm(filtered_tweets["screen_name"].unique()):

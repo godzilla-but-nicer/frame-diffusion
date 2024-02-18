@@ -34,7 +34,6 @@ granger_causal_frames = ["Morality and Ethics",
                          "External Regulation and Reputation"]
 
 all_frames = config["frames"]["generic"] + config["frames"]["specific"]# + config["frames"]["narrative"]
-all_frames = config["frames"]["generic"]
 good_frames = [frame for frame in all_frames if frame not in config["frames"]["low_f1"]]
 # %%
 frame = "Economic"
@@ -42,11 +41,12 @@ frame = "Economic"
 print(self_results[frame].pvalues)
 print(self_results[frame].params)
 # %%
-collected_self_results = {"frame": [], "coef": [], "pvalue": []}
+collected_self_results = {"frame": [], "coef": [], "pvalue": [], "ci": []}
 for frame in good_frames:
     collected_self_results["frame"].append(frame)
     collected_self_results["coef"].append(self_results[frame].params["exposure"])
     collected_self_results["pvalue"].append(self_results[frame].pvalues["exposure"])
+    collected_self_results["ci"].append(self_results[frame].conf_int().loc["exposure"][1] - self_results[frame].params["exposure"])
 
 exposure_results = pd.DataFrame(collected_self_results)
 exposure_results["bonferroni_pvalue"] = exposure_results["pvalue"] * exposure_results.shape[0]
@@ -59,15 +59,19 @@ fig, ax = plt.subplots(dpi=300)
 sns.barplot(data=exposure_results, x="coef", y="frame",
             hue="Significant", dodge=False, ax=ax)
 
+ax.hlines(range(len(exposure_results)),
+          exposure_results["coef"] - exposure_results["ci"],
+          exposure_results["coef"] + exposure_results["ci"],
+          color="black", lw=3)
+
 ax.set_ylabel('')
 plt.tight_layout()
 ax.set_xlabel("Self-exposure Log Odds-Ratio")
 plt.savefig("plots/regression/self_influence_treatment.png")
 plt.savefig("plots/regression/self_influence_treatment.pdf")
 plt.show()
-
 # %%
-collected_self_results = {"frame": [], "coef": [], "pvalue": []}
+collected_self_results = {"frame": [], "coef": [], "pvalue": [], "ci": []}
 for frame in good_frames:
     collected_self_results["frame"].append(frame)
     collected_self_results["coef"].append(self_results[frame].params["ideology"])
