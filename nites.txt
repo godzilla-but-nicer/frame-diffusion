@@ -20,3 +20,20 @@ how do we look at group changes over time, are right wing journos and politician
 6. make a big planning document to present next week. what kinds of analyses can we do/should we do etc.
     - include everything for the whole project
 7. send availability for next week    
+
+# April 2024
+- Need to rerun classification on Journalist tweets, some appear to be missing
+
+# Meeting june 11
+
+## Granger Causality problems
+
+- The residual time series are not identical length
+  - The time series are being aligned in some arbitrary way for granger causality tests
+  - could be underestimating effects as we are sort of already purturbing the time series
+- Conditional package in R gives weird output
+  - No clear single metric descriing strength or liklihood of granger causal relationship
+  - very slow!
+  - could we use the events in determining the residuals and then just run regular granger causality?
+- I should read some of the papers I downloaded on this to see if I can make sense of it
+

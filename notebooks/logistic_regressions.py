@@ -44,7 +44,7 @@ print("config and paths loaded")
 # load all of the frames and tweet time stamps etc.
 print("loading tweets")
 f = pd.read_csv(paths["all_frames"], sep="\t")
-filtered_tweets = fs.filter_users_by_activity(f, 10)
+filtered_tweets = fs.filter_users_by_activity(f, 1)
 print("tweets loaded")
 
 # FOR TESTING
@@ -261,3 +261,7 @@ for frame in tqdm(all_frame_list):
 with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") as fout:
     pickle.dump(result_dict, fout)
 # %%
+print("running combined alter and self influence regression")
+
+# %%
+print("running combined regression with events")

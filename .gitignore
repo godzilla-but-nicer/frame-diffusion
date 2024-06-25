@@ -6,6 +6,11 @@
 *.zip
 *.pkl
 
+# TeX stuff
+*.dvi
+*.aux
+*.log
+
 # config etc
 !workflow/*.json
 workflow/twitter_api_keys.json
@@ -26,6 +31,8 @@ ignore/
 # snakemake
 .snakemake/
 
+# my notes
+notes/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -156,3 +163,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+*.swp
+*.r

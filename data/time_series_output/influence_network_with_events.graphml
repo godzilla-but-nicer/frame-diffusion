@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d0" for="edge" attr.name="weight" attr.type="long"/>
+<graph edgedefault="directed"><node id="congress-left"/>
+<node id="journalist-left"/>
+<node id="journalist-right"/>
+<node id="trump"/>
+<node id="congress-right"/>
+<node id="public-right"/>
+<node id="public-left"/>
+<edge source="congress-left" target="journalist-left">
+  <data key="d0">1</data>
+</edge>
+<edge source="congress-left" target="journalist-right">
+  <data key="d0">2</data>
+</edge>
+<edge source="congress-left" target="trump">
+  <data key="d0">2</data>
+</edge>
+<edge source="journalist-left" target="congress-left">
+  <data key="d0">6</data>
+</edge>
+<edge source="journalist-left" target="congress-right">
+  <data key="d0">1</data>
+</edge>
+<edge source="journalist-left" target="journalist-right">
+  <data key="d0">2</data>
+</edge>
+<edge source="journalist-left" target="public-right">
+  <data key="d0">1</data>
+</edge>
+<edge source="journalist-left" target="trump">
+  <data key="d0">1</data>
+</edge>
+<edge source="journalist-right" target="congress-left">
+  <data key="d0">2</data>
+</edge>
+<edge source="journalist-right" target="congress-right">
+  <data key="d0">2</data>
+</edge>
+<edge source="journalist-right" target="journalist-left">
+  <data key="d0">1</data>
+</edge>
+<edge source="journalist-right" target="trump">
+  <data key="d0">6</data>
+</edge>
+<edge source="trump" target="congress-right">
+  <data key="d0">1</data>
+</edge>
+<edge source="trump" target="journalist-right">
+  <data key="d0">4</data>
+</edge>
+<edge source="trump" target="public-left">
+  <data key="d0">1</data>
+</edge>
+<edge source="congress-right" target="journalist-left">
+  <data key="d0">1</data>
+</edge>
+<edge source="congress-right" target="journalist-right">
+  <data key="d0">2</data>
+</edge>
+<edge source="congress-right" target="trump">
+  <data key="d0">4</data>
+</edge>
+<edge source="public-right" target="journalist-left">
+  <data key="d0">1</data>
+</edge>
+<edge source="public-right" target="public-left">
+  <data key="d0">16</data>
+</edge>
+<edge source="public-right" target="trump">
+  <data key="d0">3</data>
+</edge>
+<edge source="public-left" target="congress-left">
+  <data key="d0">2</data>
+</edge>
+<edge source="public-left" target="congress-right">
+  <data key="d0">1</data>
+</edge>
+<edge source="public-left" target="journalist-left">
+  <data key="d0">2</data>
+</edge>
+<edge source="public-left" target="journalist-right">
+  <data key="d0">3</data>
+</edge>
+<edge source="public-left" target="public-right">
+  <data key="d0">15</data>
+</edge>
+<edge source="public-left" target="trump">
+  <data key="d0">2</data>
+</edge>
+</graph></graphml>

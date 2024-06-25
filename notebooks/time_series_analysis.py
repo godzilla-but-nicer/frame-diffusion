@@ -4,17 +4,28 @@ from statsmodels.tsa import ar_model
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa import stattools
 from scipy.stats import lognorm, poisson, expon
+import data_selector as ds
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
 from statsmodels.tsa.stattools import grangercausalitytests
 from itertools import permutations
 
-with open("../workflow/config.json", "r") as cf:
+
+if os.getcwd().split("/")[-1] != "frame-diffusion":
+    os.chdir("..")
+
+with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
+
+
+with open("workflow/paths.json", "r") as cf:
+    paths = json.loads(cf.read())
+
 
 # normalize the windowed sums by the total number of frames for the group in
 # the given time window. each window within a group will then represent a
@@ -22,52 +33,11 @@ with open("../workflow/config.json", "r") as cf:
 normalize = True
 
 # %%
-# load data
-groups = ["congress", "journalists", "trump", "public"]
-# basically every tweet has one or both of narrative/episodic so it will mess
-# with normalization when narrative frames arent terriblytt interesting for
-# granger causality analysis
-if normalize:
-    frame_types = ["generic", "specific"]  # could do narrative but thats not super interesting for granger causality
-else:
-    frame_types = ["generic", "specific", "narrative"]
-
-# %%|
-frames = {k: {} for k in groups}
-for group in groups:
-    for frame_type in frame_types:
-
-        # all frames are in one file for the public
-        # we have to merge a couple of different files in either case
-        if group != "public":
-            # predicted frames
-            predictions = pd.read_csv(f"../data/binary_frames/{group}/{group}_{frame_type}.tsv",
-                                      sep="\t").drop("text", axis="columns")
-
-            # time stamps for granger causality
-            tweet_info = pd.read_csv(f"../data/immigration_tweets/{group}.tsv",
-                                     sep="\t")[["id_str", "time_stamp"]]
-
-            tweet_info["id_str"] = tweet_info["id_str"].astype(str)
-            predictions["id_str"] = predictions["id_str"].astype(str)
-
-            # merge and add to list of dataframes to combine
-            tweet_df = pd.merge(tweet_info, predictions,
-                                how="right", on="id_str")
-            frames[group][frame_type] = tweet_df
-        else:
-            # frame predictions
-            predictions = pd.read_csv(f"../data/binary_frames/predicted_frames.tsv",
-                                      sep="\t")
-
-            tweet_info = pd.read_csv("../data/us_public_ids.tsv", sep="\t")
-            tweet_info["time_stamp"] = pd.to_datetime(tweet_info["time_stamp"])
-            
-            # tweet_info["time_stamp"] = datetime.strptime(tweet_info["time_stamp"],
-            #                                              "%a %b %d %H:%M:%S +0000 %Y")
-            
-            frames["public"] = pd.merge(tweet_info, predictions, on="id_str")
-
+frames = {}
+frames["public"] = ds.load_public_frames()
+frames["congress"] = ds.load_congress_frames()
+frames["journalist"] = ds.load_journalist_frames()
+frames["trump"] = ds.load_trump_frames()
 
 # %% [markdown]
 #
@@ -389,18 +359,19 @@ alpha = 0.05
 def bonferroni_holm(data, alpha):
     sorted = data.sort_values("p_value")
     rejections = np.zeros(sorted.shape[0], dtype=bool)
+    new_p = np.zeros(sorted.shape[0])
 
     for row_i in range(sorted.shape[0]):
 
         # functional alpha for each iteration
         abh = alpha / (sorted.shape[0] - row_i)
+        new_p[row_i] = (sorted.iloc[row_i]["p_value"] * (sorted.shape[0] - row_i))
 
         if sorted.iloc[row_i]["p_value"] < abh:
             rejections[row_i] = True
-        else:
-            break
 
     sorted["null_rejected"] = rejections
+    sorted["p_corrected"] = new_p
     return sorted
 
 gcdf_corrected = bonferroni_holm(gcdf, 0.05)
@@ -517,6 +488,8 @@ gcdf.to_csv(f"../data/time_series_output/optimal_granger_causality{norm_label}.t
             index=False)
 
 gcdf_corrected = bonferroni_holm(gcdf, 0.05)
-signif = gcdf_corrected[gcdf_corrected["null_rejected"] == True]
+signif = gcdf_corrected
 signif.to_csv(f"../data/time_series_output/significant_complete_granger{norm_label}_optimal_ar.tsv", sep="\t")
+# %%
+signif
 # %%

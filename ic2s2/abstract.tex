@@ -1,0 +1,138 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{authblk}
+\usepackage{graphicx}
+\usepackage{mathptmx}
+\usepackage[singlespacing]{setspace}
+\usepackage[headheight=1in,margin=1in]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lipsum}
+\usepackage{xcolor}
+
+% Stuff I added
+\usepackage[doi=false,isbn=false,url=false,eprint=false]{biblatex}
+\addbibresource{framing.bib}
+
+\AtEveryBibitem{
+    \clearfield{urlyear}
+    \clearfield{urlmonth}
+    \clearfield{note}
+}
+
+\renewcommand{\headrulewidth}{0pt}
+\pagestyle{fancy}
+
+% display comments
+\newcommand{\jm}[1]{\textcolor{olive}{JM: #1}}
+\newcommand{\cb}[1]{\textcolor{blue}{CB: #1}}
+
+% hide comments
+%\newcommand{\jm}[1]{}
+%\newcommand{\cb}[1]{}
+
+
+\makeatletter
+\def\@maketitle{%
+  \newpage
+
+  \begin{center}%
+  \let \footnote \thanks
+    {\LARGE \@title \par}%
+  \end{center}%
+  \par
+  \vskip 0.1em}
+\makeatother
+
+\chead{%
+  $10$$^{th}$ International Conference on Computational Social Science IC$^{2}$S$^{2}$\\
+  July 17-20, 2024, Philadelphia, USA%
+}
+
+\graphicspath{{images/}}
+
+
+
+\title{Peer and group-level dynamics in political framing on social media}
+%\jm{Ack! Something about influence and diffusion of political framing on social media. Or something about closing the loop between frame production and reception/effects.}
+ 
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\begin{center}
+\textit{Keywords: Framing, NLP, Social Media, Immigration, Influence}
+\newline
+\end{center}
+
+\section*{Introduction}
+
+    Framing highlights some aspects of a topic while leaving others out. This selection changes how the topic is communicated to an audience, coloring their perception of the topic \cite{entman_framing_1993}. Framing thus determines the understanding of a community engaging in discourse. Because of this, it is essential to the understanding of a dynamic, evolving discourse to understand how and by whom the use of frames changes in time. Here, we explore the dynamics of framing around immigration discourse on Twitter in the United States in the years 2018 and 2019.
+        
+    Specifically, we look at how different types of users with different roles in the information ecosystem influence one another's framing behavior. At the group level we examine the dynamics of how media and political elites along with the public negotiate shared meaning on a topic. At the individual level, we look at the framing effect on propagation. We leverage a large dataset of predicted frames for immigration related tweets \cite{mendelsohn_modeling_2021} to study these phenomena.
+
+    Our first study is similar to that of Barber\'a et al. 2019 \cite{barbera_who_2019}. Barber\'a and coauthors use time series approaches on a year of tweets from politicians, media outlets, and members of the public to identify the relative agenda setting roles of politicians and the general public. While methodologically similar, we provide nuance by focusing on framing around a single topic at shorter timescales.
+
+    Second, we advance the methodology in the study of the effects of framing. If framing is to play a role in shaping the discourse, we must be able to see the effect of framing on individual attitudes and/or behaviors. Much of the previous work on finding framing effects has been focused on how elite's framing impacts public opinion, typically measured in small experiments \cite{chong_framing_2007}. With the ascension of NLP and social media, new approaches have become available. Closely aligned with this new perspective is the theoretical description of network-activated framing which focuses on the way that every user within a social network acts as a frame gatekeeper by propagating some frames while ignoring others \cite{peters_network-activated_2019}. Using this theoretical outlook, in our second study we measure the framing effect incorporating both elite frames and network frames from peers.
+
+\section*{Methods}
+
+    We used a dataset of 2.3M english language tweets and corresponding predicted frame labels published from the United States selected using keywords related to immigration from the Twitter Decahose initially published in \cite{mendelsohn_modeling_2021}. Additionally, we collected 23k tweets from 536 journalists using the same immigration keywords. The journalists were selected from a list of the top 10,000 journalists on Twitter in terms of xxx first published in [something-20xx]. We also included all 33k tweets containing these keywords from members of congress and from then president Donald Trump in our sample period. From this collection of predicted frames and corresponding tweet metadata we constructed time series of frames by dividing our two year sample period into days and summing the number of times a user or group of users cued a particular frame in each day.
+    
+    \textbf{Study 1} We placed users into groups based on their role in political discourse. We separated out journalists, members of congress, and Donald Trump, from the general public. For each of these groups and each frame, we created a time series as described above. We used these group-level time series to conduct a Granger causality analysis between groups for each frame, testing whether one time series improved predictions about another.
+        
+    \textbf{Study 2} Focused in to the level of individual users. We again constructed a time series for each user and each frame with the same approach as in the group-level study. Using these time series we then created a variable indicating whether a user had been exposed to each frame at the time of each of their tweets. For each tweet, we gathered a set of estimated frames, a set of frames the user posting the tweet would have been exposed to the previous day, and metadata, including engagement metrics, estimated user ideology, and whether the tweet contained multimedia or links. We used logistic regression to estimate the log-odds of cuing each frame as a function of frame exposure and the variables associated with user metadata.
+
+\section*{Results}
+
+    We find very few consistent patterns in group or peer-level framing influence. Instead, we find separation and heterogeneity. Table \ref{tab:gc} shows the results for \textbf{study 1}. We find significant results for several frames between journalists and members of congress while Donald Trump and the general public produced no significant relationships. However, we do not observe these lines of influence in general, only for a small number of frames.
+
+    Figure \ref{fig:image} shows the main results of the regression for \textbf{study 2}: the log odds of cuing each frame if exposed to that frame the previous day by mention network neighbors over the log odds of cuing the frame if unexposed. We find modest but significant effects with odds of cuing a frame increasing with exposure to that frame. Unlike the direction of the effect, the sizes of the effect of frame exposure vary dramatically with odds of cuing Threat: Jobs increasing by about 20\% upon exposure on the high end and Political Factors and Implications only increasing about 1\%. A partial explanation for this pattern can be found in the strong negative correlation between the odds-ratios and the frequency of the frames in our dataset ($\rho=-0.81$, $p < 0.0001$).
+
+
+\section*{Discussion}
+
+Our group-level results indicate that despite the vaunted democratization of discourse through social media, elites and the general public do not appear to directly influence one another, at least in day-to-day discourse. Rather, entrenched elites interact to determine issue framing for themselves while the public appears neither to lead nor follow elites in day-to-day discourse. We also find that by using social media data, we can directly measure frame effects on user behavior, closing the frame consumption/production loop. Specifically, we find a great deal of heterogeneity in the likelihood of propagating a frame upon exposure. Some of this heterogeniety may be due to users being more likely to use rare frames only when they are infrequently reminded of them through exposure.
+
+
+%\bibliographystyle{plain}
+\printbibliography
+
+
+\newpage
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=14cm]{images/alter_odds_frequency.pdf}
+\caption{Log odds a particular frame if a user was exposed to the frame the previous day by a mention network neighbor over odds of cuing the frame if unexposed the previous day. Error bars represent 95\% confidence intervals around estimated odds-ratios.}
+\label{fig:image}
+\end{figure}
+
+
+\begin{table}[]
+\caption{Log-likelihood ratios for Granger causal relationships on cuing particular frames between groups of twitter users. Frames and values in bold indicate significant relationships following Bonferonni-Holm procedure ($\alpha=0.05$). Only the 15 potential relationships for which P-values were minimal are shown for brevity.}
+\label{tab:gc}
+\begin{tabular}{lllrr}
+Source Group & Target group & Frame                                              & likelihood & P-value           \\ \hline
+Journalists  & Congress     & \textbf{Morality and Ethics}                       & \textbf{55.31} & \textbf{2.29e-11} \\
+             &              & \textbf{Victim: Humanitarian}                      & \textbf{25.58} & \textbf{9.38e-5}  \\
+             &              & \textbf{Legality, Constitutionality, Jurisdiction} & \textbf{25.24} & \textbf{1.11e-4}  \\
+             &              & \textbf{Crime and Punishment}                      & \textbf{19.23} & \textbf{0.00254}  \\
+             &              & \textbf{Policy Prescription and Evaluation}        & \textbf{18.34} & \textbf{0.00406}  \\
+             &              & \textbf{Security and Defense}                      & \textbf{13.84} & \textbf{0.0427}  \\
+             &              & Health and Safety                                  & 10.24          & 0.288           \\
+Congress     & Journalists  & \textbf{External Regulation and Reputation}        & \textbf{18.11} & \textbf{0.00452}  \\
+             &              & \textbf{Victim: Humanitarian}                      & \textbf{13.92} & \textbf{0.0412}  \\
+             &              & Legality, Constitutionality, Jurisdiction          & 11.64          & 0.137           \\
+             &              & Policy Prescription and Evaluation                 & 10.26          & 0.286           \\
+             &              & Political Factors and Implications                 & 9.42           & 0.447           \\
+Trump        & Public       & Victim: Discrimination                             & 11.98          & 0.115           \\
+Congress     & Public       & Victim: Discrimination                             & 10.85          & 0.209           \\
+Public       & Congress     & Capacity and Resources                             & 9.99           & 0.328          
+\end{tabular}
+\end{table}
+
+\end{document}

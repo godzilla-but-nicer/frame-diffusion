@@ -18,6 +18,7 @@
     "journalists": {
         "metadata": "data/user_info/top_536_journos.tsv",
         "mbfc": "data/user_info/mbfc_data.tsv",
+        "mbfc_mapper": "data/user_info/mbfc_site_name_mapper.tsv",
         "full_tweets": "data/immigration_tweets/journalists.tsv",
         "tweet_json": "data/immigration_tweets/journalists.json",
         "edges": "data/edge_lists/journalists_successors.tsv",
@@ -46,8 +47,9 @@
         "metadata": "data/user_info/full_datasheet.tsv",
         "user_id_map": "data/user_info/user_id_map.tsv",
         "frames": {
-            "all": "data/binary_frames/predicted_frames.tsv"
-        }
+            "all": "data/binary_frames/all_frames.tsv"
+        },
+        "us_tweet_ids": "data/us_public_ids.tsv"
     },
     "mentions": {
         "id_map": "data/user_id_map.tsv",
