@@ -3,6 +3,7 @@
     "tweet_catalog": "data/down_sample/immigration_tweets/tweets_by_id.json",
     "all_frames": "data/down_sample/binary_frames/all_frames.tsv",
     "user_time_series": "data/down_sample/binary_frames/user_time_series.pkl",
+    "events_data": "data/events/consolidated_dates_first.csv",
     "congress": {
         "metadata": "data/user_info/congress_info.tsv",
         "full_tweets": "data/down_sample/immigration_tweets/congress.tsv",
@@ -58,6 +59,8 @@
         "features": "data/down_sample/regression/features.tsv",
         "self_output": "data/down_sample/regression/self_output/",
         "alter_output": "data/down_sample/regression/alter_output/",
+        "combined_output": "data/down_sample/regression/combined_output/",
+        "events_output": "data/down_sample/regression/events_output/",
         "result_pickles": "data/down_sample/regression/result_pickles/",
         "self_influence_pairs": "data/down_sample/regression/self_influence_pairs.pkl",
         "alter_influence_pairs": "data/down_sample/regression/alter_influence_pairs.pkl"

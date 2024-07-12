@@ -279,7 +279,7 @@ def run_granger_causality(pair: Tuple,
         result["target"] = pair[1]
 
     if shuffle_source:
-        source_data = source_data.sample(frac=1)
+        source_data = np.random.permutation(source_data)
     
     gcdf = pd.DataFrame({"source": source_data, "target": target_data, "events": events}).fillna(0)
     
@@ -364,11 +364,31 @@ signif.to_csv(f"data/time_series_output/significant_complete_granger_partisan_{n
 # %%
 # bootstrap gc runs
 output_rows = []
-n_boots = 10
+n_boots = 100
 for pair in tqdm(test_pairs):
     for frame in good_frames:
         for _ in range(n_boots):
             output_rows.extend(run_granger_causality(pair, residuals, scaffolded_events["event"].values, frame, shuffle_source=True))
 
 bootstrap_gcs = pd.DataFrame(output_rows)
+bootstrap_gcs.to_csv("bootstrap_gc.tsv", sep="\t", index=False)
+# %%
+# This really should live else where but for now its here
+bootstrap_gcs
+# %%
+observed_quantiles = []
+for i, row in signif.iterrows():
+    boots = bootstrap_gcs[(bootstrap_gcs["frame"] == row["frame"]) &
+                          (bootstrap_gcs["source"] == row["source"]) &
+                          (bootstrap_gcs["target"] == row["target"]) &
+                          (bootstrap_gcs["events_causing"] == row["events_causing"])]
+    
+    observed_quantiles.append(np.mean(row["f_statistic"] < boots["f_statistic"]))
+
+signif["bootstrap_p"] = observed_quantiles
+boot_signif = signif[signif["bootstrap_p"] < 0.05]
+signif.to_csv("data/time_series_output/significant_complete_granger_partisan_{normalized}_bootstrap.tsv")
+# %%
+print(np.sum(signif["events_causing"] == False))
+print(np.sum(boot_signif["events_causing"] == False))
 # %%

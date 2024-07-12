@@ -4,6 +4,7 @@
     "all_frames": "data/binary_frames/all_frames.tsv",
     "comment_on_all_frames": "this is generated in individual_user_eda notebook",
     "user_time_series": "data/binary_frames/user_time_series.pkl",
+    "events_data": "data/events/consolidated_events_first.csv",
     "congress": {
         "metadata": "data/user_info/congress_info.tsv",
         "full_tweets": "data/immigration_tweets/congress.tsv",
@@ -63,6 +64,8 @@
         "features": "data/regression/features.tsv",
         "self_output": "data/regression/self_output/",
         "alter_output": "data/regression/alter_output/",
+        "combined_output": "data/regression/combined_output/",
+        "events_output": "data/regression/events_output/",
         "result_pickles": "data/regression/result_pickles/",
         "self_influence_pairs": "data/regression/self_influence_pairs.pkl",
         "alter_influence_pairs": "data/regression/alter_influence_pairs.pkl"

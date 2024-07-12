@@ -37,7 +37,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files
-with open("workflow/paths.json", "r") as pf:
+with open("workflow/sample_paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
@@ -53,12 +53,6 @@ filtered_tweets = filtered_tweets.sample(frac=1)
 # list of all frame names
 all_frame_list = config["frames"]["generic"] + config["frames"]["specific"] + config["frames"]["narrative"]
 
-# load the features dataset
-print("loading features")
-features = pd.read_csv(paths["regression"]["features"], sep="\t", dtype={"id_str": str})
-features = features.drop_duplicates()
-print("features loaded")
-
 # adjacency list for neighbor lookup
 print("loading adjacency list")
 with open(paths["mentions"]["adjacency_list"], "r") as fout:
@@ -70,6 +64,11 @@ with open(paths["user_time_series"], "rb") as utspkl:
     user_time_series = pickle.load(utspkl)
 print("loaded user time series hash")
 
+# load the features dataset
+print("loading features")
+features = pd.read_csv(paths["regression"]["features"], sep="\t", dtype={"id_str": str})
+features = features.drop_duplicates()
+print("features loaded")
 # %% [markdown]
 # Ok now we need to built the treatment pairs, Basically for each tweet we look
 # for frames in the previous day. This is the sort of self exposure treatment.
@@ -98,7 +97,7 @@ except:
             pickle.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
-regression_dfs = {}
+self_regression_dfs = {}
 for frame in tqdm(all_frame_list):
 
     rows = []
@@ -117,18 +116,18 @@ for frame in tqdm(all_frame_list):
         row = {}
         row["cue"] = cue
         row["id_str"] = str(id)
-        row["exposure"] = exposure
+        row["self_exposure"] = exposure
 
         rows.append(row)
 
-    pairs_df = pd.DataFrame(rows)
+    self_pairs_df = pd.DataFrame(rows)
 
-    regression_dfs[frame] = pd.merge(pairs_df, features, on="id_str", how="left")
+    self_regression_dfs[frame] = pd.merge(self_pairs_df, features, on="id_str", how="left")
 
 
 # %%
 endog_col = "cue"
-exog_cols = ["exposure", 
+exog_cols = ["self_exposure", 
               "is_quote_status", "is_reply", 
               "log_chars", "log_favorites", "log_retweets",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
@@ -137,7 +136,7 @@ print("running self-influence regressions")
 result_dict = {}
 for frame in tqdm(all_frame_list):
 
-    clean_frame_df = regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
+    clean_frame_df = self_regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
 
     response = clean_frame_df[endog_col]
     predictors = sm.add_constant(clean_frame_df[exog_cols])
@@ -201,7 +200,7 @@ except:
 
 # %%
 print("building alter-influence dfs")
-regression_dfs = {}
+alter_regression_dfs = {}
 for frame in tqdm(all_frame_list):
 
     rows = []
@@ -212,7 +211,7 @@ for frame in tqdm(all_frame_list):
         if len(pair["t"]) == 0:
             exposure = 0
         else:
-            exposure = pair["t"][frame].values[0]
+            exposure = pair["t"][frame]
         
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
@@ -220,26 +219,26 @@ for frame in tqdm(all_frame_list):
         row = {}
         row["cue"] = cue
         row["id_str"] = str(id)
-        row["exposure"] = exposure
+        row["alter_exposure"] = exposure
 
         rows.append(row)
 
-    pairs_df = pd.DataFrame(rows)
+    alter_pairs_df = pd.DataFrame(rows)
 
-    regression_dfs[frame] = pd.merge(pairs_df, features, on="id_str", how="left").dropna()
+    alter_regression_dfs[frame] = pd.merge(alter_pairs_df, features, on="id_str", how="left").dropna()
 # %%
 
 print("running alter-influence regressions")
 endog_col = "cue"
-exog_cols = ["exposure", 
+exog_cols = ["alter_exposure", 
               "is_quote_status", "is_reply", 
               "log_chars", "log_favorites", "log_retweets",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
 result_dict = {}
 for frame in tqdm(all_frame_list):
-    response = regression_dfs[frame][endog_col]
-    predictors = sm.add_constant(regression_dfs[frame][exog_cols])
+    response = alter_regression_dfs[frame][endog_col]
+    predictors = sm.add_constant(alter_regression_dfs[frame][exog_cols])
 
     model = sm.Logit(endog=response, exog=predictors)
 
@@ -263,5 +262,102 @@ with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") a
 # %%
 print("running combined alter and self influence regression")
 
+# we have the exposure variables for self and alter we just have to combine
+# them with the features to get the combined regressions
+endog_col = "cue"
+exog_cols = ["alter_exposure", "self_exposure",
+              "is_quote_status", "is_reply", 
+              "log_chars", "log_favorites", "log_retweets",
+              "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
+
+result_dict = {}
+combined_frame_dfs = {}
+for frame in tqdm(all_frame_list):
+
+    combined_frame_dfs[frame] = pd.merge(alter_regression_dfs[frame][["id_str", "alter_exposure"]],
+                                         self_regression_dfs[frame], on="id_str", how="right")
+    combined_frame_dfs[frame]["alter_exposure"] = combined_frame_dfs[frame]["alter_exposure"].fillna(0)
+
+    clean_regression_df = combined_frame_dfs[frame].dropna(subset = [endog_col] + exog_cols)
+
+    response = clean_regression_df[endog_col]
+    predictors = sm.add_constant(clean_regression_df[exog_cols])
+
+    model = sm.Logit(endog=response, exog=predictors)
+    
+    try:
+        result = model.fit(maxiter=50)
+        result_dict[frame] = result
+    except:
+        print(f"no results for frame: {frame}")
+        continue
+
+    header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
+    with open(paths["regression"]["combined_output"] + header_suffix, "w") as f_head:
+        f_head.write(result.summary().tables[0].as_csv())
+
+    params_suffix = f"{frame.lower().replace(' ', '_')}_table.csv"
+    with open(paths["regression"]["combined_output"] + params_suffix, "w") as f_body:
+        f_body.write(result.summary().tables[1].as_csv())
+
+with open(paths["regression"]["result_pickles"] + "combined_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
+
+
+
 # %%
+# we have the combined frame df data from before but we need to incorporate events
+# I think I might need to go back to the beginning to do that
+
 print("running combined regression with events")
+events = pd.read_csv(paths["events_data"])
+
+endog_col = "cue"
+exog_cols = ["alter_exposure", "self_exposure",
+              "is_quote_status", "is_reply", 
+              "log_chars", "log_favorites", "log_retweets",
+              "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
+
+events = events[["date"]]
+events["complete_date"] = events["date"]
+events = events.drop("date", axis="columns")
+events["event"] = 1
+
+result_dict = {}
+
+for frame in all_frame_list:
+    rdf = combined_frame_dfs[frame].dropna(subset=["year", "month", "date"]).copy()
+    rdf["complete_date"] = rdf.apply(lambda x: f"{int(x['year'])}-{int(x['month'])}-{int(x['date'])}", axis=1)
+
+    clean_regression_df = pd.merge(rdf, events, on="complete_date", how="left").dropna(subset=[endog_col] + exog_cols)
+    clean_regression_df = clean_regression_df.fillna(0)
+
+    exog_cols.append("event")
+    response = clean_regression_df[endog_col]
+    predictors = sm.add_constant(clean_regression_df[exog_cols])
+
+    model = sm.Logit(endog=response, exog=predictors)
+
+    try:
+        result = model.fit(maxiter=50)
+        result_dict[frame] = result
+    except:
+        print(f"no results for frame: {frame}")
+        continue
+
+    header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
+    with open(paths["regression"]["event_output"] + header_suffix, "w") as f_head:
+        f_head.write(result.summary().tables[0].as_csv())
+
+    params_suffix = f"{frame.lower().replace(' ', '_')}_table.csv"
+    with open(paths["regression"]["event_output"] + params_suffix, "w") as f_body:
+        f_body.write(result.summary().tables[1].as_csv())
+
+with open(paths["regression"]["result_pickles"] + "event_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
+
+combined_frame_dfs["Economic"]
+
+# %%
+
+# %%

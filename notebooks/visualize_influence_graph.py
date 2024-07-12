@@ -26,3 +26,8 @@ D_users = nx.from_pandas_edgelist(sgc_network, edge_attr="weight", create_using=
 nx.write_graphml(D_events, "../data/time_series_output/influence_network_with_events.graphml")
 nx.write_graphml(D_users, "../data/time_series_output/influence_network_without_events.graphml")
 # %%
+sgc_events = sgc[sgc["events_causing"] == True]
+sgc_no_events = sgc[sgc["events_causing"] == False]
+
+
+# %%

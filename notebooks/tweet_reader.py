@@ -41,7 +41,36 @@ def sample_tweets_by_date(df, date):
         for line in lines:
             print(line)
 
+def sample_tweets_by_frame(df, frame):
+    frame = df[df[""]]
+
 # %%
 focal_date = datetime.date(2019, 9, 13)
 sample_tweets_by_date(journalists, focal_date)
+# %%
+
+trump = ds.load_trump_frames()
+def sample_tweets_by_frame(df, frame):
+    framed = df[df[frame] == 1]
+
+    try:
+        sample = framed.sample(10)
+    except:
+        sample = framed
+
+    print(f"{frame} ({np.sum(df[frame])} total)")
+    print("-"*70 + "\n")
+    for sample_text in sample["text"]:
+        lines = textwrap.wrap(f"{sample_text}", 
+                                70, 
+                                subsequent_indent="        ", 
+                                initial_indent="--->  ")
+
+        for line in lines:
+            print(line)
+
+# %%
+frame = "Crime and Punishment"
+sample_tweets_by_frame(trump, frame)
+# %%
 # %%

@@ -40,13 +40,33 @@
             "Episodic",
             "Thematic"
         ],
-        "low_f1": [
+        "test_f1_sub_0.6": [
             "Public Sentiment",
             "Quality of Life",
             "Hero: Cultural Diversity",
             "Hero: Integration",
+            "Victim: War",
+            "capacity and Resources",
+            "Hero: Cultural Diversity"
+        ],
+        "analysis_frames": [
+            "Crime and Punishment",
+            "Cultural Identity",
+            "Economic",
+            "External Regulation and Reputation",
+            "Fairness and Equality",
+            "Health and Safety",
+            "Legality, Constitutionality, Jurisdiction",
+            "Morality and Ethics",
+            "Policy Prescription and Evaluation",
+            "Political Factors and Implications",
+            "Security and Defense",
             "Hero: Worker",
-            "Victim: War"
+            "Threat: Fiscal",
+            "Threat: Jobs",
+            "Threat: Public Order",
+            "Victim: Discrimination",
+            "Victim: Humanitarian"
         ]
     },
     "model_names": {
