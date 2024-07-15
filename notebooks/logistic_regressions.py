@@ -37,7 +37,7 @@ with open("workflow/config.json", "r") as cf:
     config = json.loads(cf.read())
 
 # paths to data files
-with open("workflow/sample_paths.json", "r") as pf:
+with open("workflow/paths.json", "r") as pf:
     paths = json.loads(pf.read())
 print("config and paths loaded")
 
@@ -134,17 +134,17 @@ exog_cols = ["self_exposure",
 
 print("running self-influence regressions")
 result_dict = {}
-for frame in tqdm(all_frame_list):
+for frame in []:#tqdm(all_frame_list):
 
     clean_frame_df = self_regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
 
     response = clean_frame_df[endog_col]
     predictors = sm.add_constant(clean_frame_df[exog_cols])
 
-    model = sm.Logit(endog=response, exog=predictors, )
+    model = sm.Logit(endog=response, exog=predictors)
 
     try:
-        result = model.fit(maxiter=50)
+        result = model.fit(maxiter=100, method="bfgs")
         result_dict[frame] = result
     except:
         print(f"no results for frame: {frame}")
@@ -159,8 +159,8 @@ for frame in tqdm(all_frame_list):
     with open(paths["regression"]["self_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
-with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as fout:
-    pickle.dump(result_dict, fout)
+#with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as fout:
+#    pickle.dump(result_dict, fout)
 
 # %% [markdown]
 #
@@ -211,7 +211,7 @@ for frame in tqdm(all_frame_list):
         if len(pair["t"]) == 0:
             exposure = 0
         else:
-            exposure = pair["t"][frame]
+            exposure = pair["t"][frame].values[0]
         
         cue = pair["t+1"][frame]
         id = pair["t+1"]["id_str"]
@@ -236,18 +236,20 @@ exog_cols = ["alter_exposure",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
 result_dict = {}
-for frame in tqdm(all_frame_list):
+for frame in []: #tqdm(all_frame_list):
     response = alter_regression_dfs[frame][endog_col]
     predictors = sm.add_constant(alter_regression_dfs[frame][exog_cols])
 
     model = sm.Logit(endog=response, exog=predictors)
 
     try:
-        result = model.fit(maxiter=50)
+        result = model.fit(maxiter=100, method="bfgs")
         result_dict[frame] = result
-    except:
+    except Exception as e:
         print(f"no results for frame: {frame}")
+        print(f"Exception: {e}")
         continue
+
 
     header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
     with open(paths["regression"]["alter_output"] + header_suffix, "w") as f_head:
@@ -257,8 +259,8 @@ for frame in tqdm(all_frame_list):
     with open(paths["regression"]["alter_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
-with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") as fout:
-    pickle.dump(result_dict, fout)
+#with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") as fout:
+#    pickle.dump(result_dict, fout)
 # %%
 print("running combined alter and self influence regression")
 
@@ -272,7 +274,7 @@ exog_cols = ["alter_exposure", "self_exposure",
 
 result_dict = {}
 combined_frame_dfs = {}
-for frame in tqdm(all_frame_list):
+for frame in []: #tqdm(all_frame_list):
 
     combined_frame_dfs[frame] = pd.merge(alter_regression_dfs[frame][["id_str", "alter_exposure"]],
                                          self_regression_dfs[frame], on="id_str", how="right")
@@ -286,10 +288,11 @@ for frame in tqdm(all_frame_list):
     model = sm.Logit(endog=response, exog=predictors)
     
     try:
-        result = model.fit(maxiter=50)
+        result = model.fit(maxiter=100, method="bfgs")
         result_dict[frame] = result
-    except:
+    except Exception as e:
         print(f"no results for frame: {frame}")
+        print(f"Exception: {e}")
         continue
 
     header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
@@ -300,8 +303,8 @@ for frame in tqdm(all_frame_list):
     with open(paths["regression"]["combined_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
-with open(paths["regression"]["result_pickles"] + "combined_influence.pkl", "wb") as fout:
-    pickle.dump(result_dict, fout)
+#with open(paths["regression"]["result_pickles"] + "combined_influence.pkl", "wb") as fout:
+#    pickle.dump(result_dict, fout)
 
 
 
@@ -335,22 +338,28 @@ for frame in all_frame_list:
     exog_cols.append("event")
     response = clean_regression_df[endog_col]
     predictors = sm.add_constant(clean_regression_df[exog_cols])
+    
+    save_cols = [endog_col] + exog_cols
+
+
+    clean_regression_df.to_csv(f"data/regression/full_{frame}.csv", index=False)
 
     model = sm.Logit(endog=response, exog=predictors)
 
     try:
-        result = model.fit(maxiter=50)
+        result = model.fit(maxiter=100, method="bfgs")
         result_dict[frame] = result
-    except:
+    except Exception as e:
         print(f"no results for frame: {frame}")
+        print(f"Exception: {e}")
         continue
 
     header_suffix = f"{frame.lower().replace(' ', '_')}_header.csv"
-    with open(paths["regression"]["event_output"] + header_suffix, "w") as f_head:
+    with open(paths["regression"]["events_output"] + header_suffix, "w") as f_head:
         f_head.write(result.summary().tables[0].as_csv())
 
     params_suffix = f"{frame.lower().replace(' ', '_')}_table.csv"
-    with open(paths["regression"]["event_output"] + params_suffix, "w") as f_body:
+    with open(paths["regression"]["events_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
 with open(paths["regression"]["result_pickles"] + "event_influence.pkl", "wb") as fout:
