@@ -76,7 +76,7 @@ print("features loaded")
 # %%
 try:
     with open(paths["regression"]["self_influence_pairs"], "rb") as fout:
-        all_frame_pairs = pickle.load(fout)
+        all_frame_pairs = json.load(fout)
 except:
     all_frame_pairs = []
     print("gathering self-influence pairs \n\n")
@@ -94,7 +94,7 @@ except:
 
     if len(all_frame_pairs) > 0:
         with open(paths["regression"]["self_influence_pairs"], "wb") as fout:
-            pickle.dump(all_frame_pairs, fout)
+            json.dump(all_frame_pairs, fout)
 # %%
 print("building self-influence dfs \n\n")
 self_regression_dfs = {}
@@ -134,7 +134,7 @@ exog_cols = ["self_exposure",
 
 print("running self-influence regressions")
 result_dict = {}
-for frame in []:#tqdm(all_frame_list):
+for frame in tqdm(all_frame_list):
 
     clean_frame_df = self_regression_dfs[frame].dropna(subset=[endog_col] + exog_cols)
 
@@ -159,8 +159,8 @@ for frame in []:#tqdm(all_frame_list):
     with open(paths["regression"]["self_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
-#with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as fout:
-#    pickle.dump(result_dict, fout)
+with open(paths["regression"]["result_pickles"] + "self_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
 
 # %% [markdown]
 #
@@ -170,7 +170,7 @@ for frame in []:#tqdm(all_frame_list):
 # %%
 try:
     with open(paths["regression"]["alter_influence_pairs"], "rb") as fout:
-        all_frame_pairs = pickle.load(fout)
+        all_frame_pairs = json.load(fout)
 except:
     all_frame_pairs = []
     # ok so this is going to be slow as hell
@@ -196,7 +196,7 @@ except:
 
     if len(all_frame_pairs) > 0:
         with open(paths["regression"]["alter_influence_pairs"], "wb") as fout:
-            pickle.dump(all_frame_pairs, fout)
+            json.dump(all_frame_pairs, fout)
 
 # %%
 print("building alter-influence dfs")
@@ -226,7 +226,10 @@ for frame in tqdm(all_frame_list):
     alter_pairs_df = pd.DataFrame(rows)
 
     alter_regression_dfs[frame] = pd.merge(alter_pairs_df, features, on="id_str", how="left").dropna()
+    alter_regression_dfs[frame] = pd.merge(alter_regression_dfs[frame], self_regression_dfs[frame], how="right").fillna(0)
 # %%
+# fill zeros for nan alter exposure
+
 
 print("running alter-influence regressions")
 endog_col = "cue"
@@ -236,7 +239,7 @@ exog_cols = ["alter_exposure",
               "is_verified", "log_followers", "log_following", "log_statuses", "ideology", "log_unique_mentions"]
 
 result_dict = {}
-for frame in []: #tqdm(all_frame_list):
+for frame in tqdm(all_frame_list):
     response = alter_regression_dfs[frame][endog_col]
     predictors = sm.add_constant(alter_regression_dfs[frame][exog_cols])
 
@@ -259,8 +262,8 @@ for frame in []: #tqdm(all_frame_list):
     with open(paths["regression"]["alter_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
-#with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") as fout:
-#    pickle.dump(result_dict, fout)
+with open(paths["regression"]["result_pickles"] + "alter_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
 # %%
 print("running combined alter and self influence regression")
 
@@ -274,7 +277,7 @@ exog_cols = ["alter_exposure", "self_exposure",
 
 result_dict = {}
 combined_frame_dfs = {}
-for frame in []: #tqdm(all_frame_list):
+for frame in tqdm(all_frame_list):
 
     combined_frame_dfs[frame] = pd.merge(alter_regression_dfs[frame][["id_str", "alter_exposure"]],
                                          self_regression_dfs[frame], on="id_str", how="right")
@@ -303,8 +306,8 @@ for frame in []: #tqdm(all_frame_list):
     with open(paths["regression"]["combined_output"] + params_suffix, "w") as f_body:
         f_body.write(result.summary().tables[1].as_csv())
 
-#with open(paths["regression"]["result_pickles"] + "combined_influence.pkl", "wb") as fout:
-#    pickle.dump(result_dict, fout)
+with open(paths["regression"]["result_pickles"] + "combined_influence.pkl", "wb") as fout:
+    pickle.dump(result_dict, fout)
 
 
 
