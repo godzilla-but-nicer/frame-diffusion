@@ -61,13 +61,13 @@
         "neighbors": "data/edge_lists/mention_neighbors.json"
     },
     "regression": {
-        "features": "data/regression/features.tsv",
+        "features": "data/regression/full_datasheet.tsv",
         "self_output": "data/regression/self_output/",
         "alter_output": "data/regression/alter_output/",
         "combined_output": "data/regression/combined_output/",
         "events_output": "data/regression/events_output/",
         "result_pickles": "data/regression/result_pickles/",
-        "self_influence_pairs": "data/regression/self_influence_pairs.pkl",
-        "alter_influence_pairs": "data/regression/alter_influence_pairs.pkl"
+        "self_influence_pairs": "data/regression/self_influence_pairs.json",
+        "alter_influence_pairs": "data/regression/alter_influence_pairs.json"
     }
 }
